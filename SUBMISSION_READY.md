@@ -8,23 +8,16 @@ built and verified.
 
 ## What you have to do
 
-**1. Create your WordPress.org account.**
-<https://login.wordpress.org/register>
+**1. Finish activating your WordPress.org account.**
 
-You do not have one yet — I checked, and `profiles.wordpress.org/kristijankopacevic`
-returns 404. **Register with the username `kristijankopacevic`**, which is
-currently unclaimed. `readme.txt` already names it as the contributor, so taking
-that exact username makes the plugin page correct with no further edit.
+You registered as **truepotato**. The account is not live yet —
+`profiles.wordpress.org/truepotato` still returns 404, which is what you see
+until the registration is confirmed. Check the inbox for the address you signed
+up with (including spam) and click the link WordPress.org sent; it asks you to
+set a password. Once that is done the profile page resolves.
 
-If you take a different username, change line 2 of `readme.txt` to match before
-you upload:
-
-```
-Contributors: kristijankopacevic
-```
-
-Registration needs a working email address and you must click the confirmation
-link, which is why this step is yours and not mine.
+`readme.txt` already names `truepotato` as the contributor, so nothing else
+needs changing.
 
 **2. Open the submission page and upload the ZIP.**
 <https://wordpress.org/plugins/developers/add/>

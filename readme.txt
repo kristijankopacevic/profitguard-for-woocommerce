@@ -1,5 +1,5 @@
 === ProfitGuard for WooCommerce ===
-Contributors: kristijankopacevic
+Contributors: truepotato
 Tags: woocommerce, profit, margin, cost of goods, shipping
 Requires at least: 6.4
 Tested up to: 7.1
