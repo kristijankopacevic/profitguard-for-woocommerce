@@ -1,0 +1,40 @@
+{
+  "name": "profitguard/profitguard-for-woocommerce",
+  "description": "Find low-margin products and shipping losses inside WooCommerce.",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "require": {
+    "php": ">=7.4"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.6",
+    "squizlabs/php_codesniffer": "^3.9",
+    "wp-coding-standards/wpcs": "^3.1",
+    "phpcompatibility/phpcompatibility-wp": "^2.1",
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "ProfitGuard\\": "includes/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "ProfitGuard\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  },
+  "scripts": {
+    "test": "phpunit",
+    "lint": "phpcs",
+    "lint:fix": "phpcbf",
+    "verify": [
+      "@lint",
+      "@test"
+    ]
+  }
+}

@@ -1,0 +1,11 @@
+# Composer dependencies are installed by `composer install`, not committed.
+# The distributable ZIP contains no vendor tree at all: the plugin has zero
+# runtime dependencies, and everything in vendor/ here is dev tooling.
+/vendor/
+/composer.lock
+/node_modules/
+/build/
+/dist/
+*.zip
+.phpunit.result.cache
+.phpcs-cache
