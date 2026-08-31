@@ -39,7 +39,13 @@ docker compose -p pgzip -f docker-compose.ziptest.yml run --rm wpcli \
    && wp plugin check profitguard-for-woocommerce"
 ```
 
-**Current state:** 0 errors. There are ~20 warnings, all
+**Current state:** 0 errors, on WordPress 7.1 + WooCommerce 11.0.1 with HPOS,
+with the plugin installed only from the built ZIP.
+
+If you just want the short version of what is left to do by hand, read
+[`SUBMISSION_READY.md`](SUBMISSION_READY.md). If a reviewer writes to you,
+[`REVIEW_RESPONSES.md`](REVIEW_RESPONSES.md) has prepared, truthful answers.
+ There are ~20 warnings, all
 `PluginCheck.Security.DirectDB.UnescapedDBParameter` on `includes/Plugin/Repository.php`,
 `includes/Plugin/Database.php` and `uninstall.php`. Those are unavoidable for a
 plugin with its own tables: `$wpdb->prepare()` binds values but cannot bind a

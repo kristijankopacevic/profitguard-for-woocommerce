@@ -9,3 +9,8 @@
 *.zip
 .phpunit.result.cache
 .phpcs-cache
+
+# The SVN-ready tree is generated from the ZIP by bin/build-release.sh. It is a
+# byte-for-byte copy of trunk plus the graphics, so committing it would store
+# every plugin file three times.
+/release/

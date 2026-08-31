@@ -83,7 +83,16 @@ final class Csv {
 		foreach ( self::DELIMITERS as $delimiter ) {
 			$counts = array();
 			foreach ( $lines as $line ) {
-				$parsed   = str_getcsv( (string) $line, $delimiter );
+				/*
+				 * The escape character is passed explicitly. PHP 8.4 deprecates
+				 * relying on the default because that default is changing, and a
+				 * deprecation notice printed by a plugin is a bug report from
+				 * every store on 8.4. Passing the HISTORICAL default keeps this
+				 * identical on every supported version rather than quietly
+				 * changing how a backslash parses; this call only counts columns
+				 * to score a delimiter, so the value never reaches the merchant.
+				 */
+				$parsed   = str_getcsv( (string) $line, $delimiter, '"', '\\' );
 				$counts[] = count( $parsed );
 			}
 
@@ -175,7 +184,10 @@ final class Csv {
 		rewind( $handle );
 
 		while ( true ) {
-			$row = fgetcsv( $handle, 0, $delimiter );
+			// The enclosure and escape are passed explicitly: PHP 8.4 deprecates
+			// relying on their defaults, and the historical values keep parsing
+			// identical on every supported version.
+			$row = fgetcsv( $handle, 0, $delimiter, '"', '\\' );
 			if ( false === $row || null === $row ) {
 				break;
 			}
@@ -193,7 +205,7 @@ final class Csv {
 				},
 				$row
 			);
-		}
+		}//end while
 		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- php://memory stream, not a file on disk. WP_Filesystem has no equivalent and nothing here touches the filesystem.
 
 		return array(
@@ -591,9 +603,10 @@ final class Csv {
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- php://memory stream, not a file on disk.
 		fwrite( $handle, "\xEF\xBB\xBF" );
 
-		fputcsv( $handle, array_map( array( self::class, 'escape_cell' ), $headers ) );
+		// Explicit enclosure and escape, for the same PHP 8.4 reason as above.
+		fputcsv( $handle, array_map( array( self::class, 'escape_cell' ), $headers ), ',', '"', '\\' );
 		foreach ( $rows as $row ) {
-			fputcsv( $handle, array_map( array( self::class, 'escape_cell' ), $row ) );
+			fputcsv( $handle, array_map( array( self::class, 'escape_cell' ), $row ), ',', '"', '\\' );
 		}
 
 		rewind( $handle );

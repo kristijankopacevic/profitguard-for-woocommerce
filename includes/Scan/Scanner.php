@@ -490,9 +490,22 @@ final class Scanner {
 	 */
 	public static function cancel(): void {
 		if ( function_exists( 'as_unschedule_all_actions' ) ) {
-			as_unschedule_all_actions( self::HOOK_PRODUCTS, array(), self::GROUP );
-			as_unschedule_all_actions( self::HOOK_ORDERS, array(), self::GROUP );
-			as_unschedule_all_actions( self::HOOK_FINISH, array(), self::GROUP );
+			/*
+			 * Cancel by GROUP, not by hook.
+			 *
+			 * as_unschedule_all_actions( $hook, array(), $group ) reads as "every
+			 * action on this hook in this group", and it is not. An empty $args
+			 * array is a FILTER matching only actions scheduled with no
+			 * arguments - it is not a wildcard. Every batch this plugin queues
+			 * carries arguments ( scan id, offset ), so the per-hook form matched
+			 * nothing and a deactivated plugin left its whole queue behind,
+			 * pending, visible in WooCommerce -> Status -> Scheduled Actions.
+			 *
+			 * With an empty hook and empty args and a group, Action Scheduler
+			 * takes its cancel_actions_by_group() path, which is what was meant.
+			 * All three hooks share this group, so one call clears them.
+			 */
+			as_unschedule_all_actions( '', array(), self::GROUP );
 		}
 
 		$state = self::state();

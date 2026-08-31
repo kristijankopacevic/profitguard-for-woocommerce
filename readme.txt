@@ -1,5 +1,5 @@
 === ProfitGuard for WooCommerce ===
-Contributors: profitguard
+Contributors: kristijankopacevic
 Tags: woocommerce, profit, margin, cost of goods, shipping
 Requires at least: 6.4
 Tested up to: 7.1
@@ -122,6 +122,11 @@ not present on every host, or a large bundled spreadsheet library. Every
 spreadsheet program exports CSV in two clicks, so CSV is what the plugin
 supports rather than shipping a dependency that fails on some hosts.
 
+= Which PHP versions are supported? =
+
+The test suite is run on PHP 7.4, 8.1, 8.2, 8.3 and 8.4, and passes identically
+on all of them. There are no deprecation notices on PHP 8.4.
+
 = What happens to my data if I delete the plugin? =
 
 Nothing is deleted unless you ask for it. Deactivating never removes data.
@@ -136,12 +141,12 @@ will not invent one.
 
 == Screenshots ==
 
-1. The ProfitGuard dashboard: score, coverage, profit health and shipping health.
-2. Findings, filtered and sorted by the amount at stake.
-3. A shipping finding: what the customer paid against what the carrier billed.
-4. Importing product costs, with the column mapping shown before anything is saved.
-5. Importing carrier costs from a carrier invoice export.
-6. Settings: target margin, retention, and what happens on uninstall.
+1. The ProfitGuard dashboard: the score, how much of your store it covers, profit health and shipping health.
+2. Product margin findings, sorted by the amount at stake, with the current price, the price that would reach your target, and the difference.
+3. Shipping findings: what each customer paid for shipping against what the carrier actually billed, including duplicate carrier charges.
+4. Importing product costs from CSV. The detected column mapping and the first rows are shown before anything is saved.
+5. Importing a carrier invoice. Optional columns you do not have are marked "not in this file" rather than guessed.
+6. Settings: target gross margin, scan history retention, store currency, and what happens on uninstall.
 
 == Changelog ==
 
@@ -158,6 +163,7 @@ will not invent one.
 * CSV export of all findings.
 * Background scanning via Action Scheduler.
 * High-Performance Order Storage compatible.
+* Verified on PHP 7.4, 8.1, 8.2, 8.3 and 8.4.
 
 == Upgrade Notice ==
 

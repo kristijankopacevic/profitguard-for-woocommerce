@@ -1,105 +1,96 @@
 # Plugin directory graphics
 
-These files do **not** live in the plugin. They go in the SVN `assets/`
-directory, a sibling of `trunk/`, and WordPress.org serves them from there.
+These files are **not** part of the plugin and are not in the ZIP. They live in
+the SVN `assets/` directory, a sibling of `trunk/`, and WordPress.org serves them
+from there.
 
-I cannot produce binary PNGs from this environment, so what follows is the exact
-specification plus a script that generates all of them for free.
+**All ten are generated and present** in `assets-wporg/`, and `bin/build-release.sh`
+copies them into `release/assets/` under the exact names below.
 
-## What is required
-
-| File | Size | Where it appears | Required? |
+| File | Size | Where it appears | Status |
 | --- | --- | --- | --- |
-| `icon-256x256.png` | 256 × 256 | Search results, plugin cards | Strongly recommended |
-| `icon-128x128.png` | 128 × 128 | Same, non-retina | Optional if 256 exists |
-| `banner-772x250.png` | 772 × 250 | Top of the plugin page | Strongly recommended |
-| `banner-1544x500.png` | 1544 × 500 | Same, retina | Optional |
-| `screenshot-1.png` … `screenshot-6.png` | ≥ 1200 px wide | Screenshots tab | Strongly recommended |
+| `icon-256x256.png` | 256 × 256 | Search results, plugin cards | Generated |
+| `icon-128x128.png` | 128 × 128 | Same, non-retina | Generated |
+| `banner-772x250.png` | 772 × 250 | Top of the plugin page | Generated |
+| `banner-1544x500.png` | 1544 × 500 | Same, retina | Generated |
+| `screenshot-1.png` … `screenshot-6.png` | 1440 × 900 | Screenshots tab | Captured |
 
-Rules that actually get enforced:
+Rules that are actually enforced:
 
 - PNG or JPG. **No SVG.** No animation.
 - Screenshot numbers must line up with the order of the captions under
-  `== Screenshots ==` in `readme.txt`. `screenshot-3.png` is the third caption.
-- The banner has no safe area. The plugin name is overlaid by WordPress.org on
-  some views, so do not put small text near the left edge.
-- Keep each file under about 1 MB. There is no hard cap, but the plugin page
-  loads all of them.
+  `== Screenshots ==` in `readme.txt`. They do.
+- The banner has no safe area — WordPress.org overlays the plugin name on some
+  views, so the composition is deliberately left-weighted with clear space on
+  the right.
 
-## Design
+## The design
 
-Match the plugin, which uses WordPress admin colours and reserves saturation for
-severity:
+- Ground: `#f7f9fb` → `#eaf1f7`. Rule: `#2271b1`.
+- Text: `#12212e`, secondary `#4a5866`.
+- Mark: `#2271b1` outer shield, `#1b5c93` inner face, `#8fd0ff` growth arrow.
 
-- Ground: `#f6f7f7`. Panel: `#ffffff`. Border: `#c3c4c7`.
-- Text: `#1d2327`, secondary `#646970`.
-- Accent (the "guard" mark): `#2271b1` — the WordPress admin blue.
-- Severity, used only where severity is meant: critical `#8a2424`,
-  high `#8a5000`, medium `#7a6000`.
+A shield containing a rising bar chart: the "guard" and the "profit" halves of
+the name, flat, with no gradient or bevel because the icon is rendered at 128 px
+and often smaller.
 
-The icon is a shield containing an upward step-chart. Flat, no gradient, no
-bevel, no drop shadow — it is rendered at 128 px and often smaller.
+Nothing here borrows the WordPress, WooCommerce or Shopify marks, and the Woo
+purple is deliberately unused. The plugin *name* may say "for WooCommerce"; the
+*graphics* may not imply an official affiliation.
 
-**Do not** put "WooCommerce" or "Woo" in the graphics as a logo, and do not use
-the Woo purple. The directory rejects assets that imply an official affiliation.
-The plugin *name* may say "for WooCommerce"; the *mark* may not borrow theirs.
+## How they were made — and how to remake them
 
-## Generating them, free
+The sources are committed in `assets-src/`:
 
-`bin/make-assets.sh` draws the icon and both banner sizes with ImageMagick,
-run from a Docker image so nothing is installed on your machine and nothing is
-paid for.
+- `mark.svg` — the shield mark, the single source of truth for the artwork
+- `icon.html` — centres the mark on white
+- `banner.html` — the mark, wordmark and tagline, sized in `vh` so one file
+  renders correctly at both banner sizes
 
-```bash
-bash bin/make-assets.sh    # -> assets-wporg/
+They are rasterised by pointing a headless browser at each file with the
+viewport set to the exact output size and taking a screenshot. Any headless
+Chrome does this; no image toolchain, font install, or paid service is involved.
+
+```
+icon.html    at 256×256   -> icon-256x256.png
+icon.html    at 128×128   -> icon-128x128.png
+banner.html  at 772×250   -> banner-772x250.png
+banner.html  at 1544×500  -> banner-1544x500.png
 ```
 
-Two caveats, stated plainly: **this script has not been executed** — Docker ran
-out of disk on the build machine before it could be — so treat it as a starting
-point to check rather than a finished tool. And unlike the Compose files, it
-pulls `dpokidov/imagemagick`, which is a third-party image rather than an
-official one. It is free and widely used, but if you would rather not, the same
-result comes from any local ImageMagick, Inkscape, or simply opening
-`assets-wporg/.icon.svg` in a vector editor and exporting the two PNG sizes by
-hand. The SVG in the script is the actual design; the rest is just rasterising.
+To change the artwork, edit `assets-src/mark.svg` and re-render. Editing the PNGs
+directly will be overwritten.
 
-For the screenshots, use a browser rather than a generator — real screenshots of
-the real plugin are what the directory wants, and fabricating them would be
-misrepresenting the product.
+## The screenshots
 
-## Capturing the six screenshots
+Captured from the **real plugin**, installed from `dist/profitguard-for-woocommerce.zip`
+onto a clean WordPress 7.1 + WooCommerce 11.0.1 with HPOS enabled, populated by
+`bin/seed-demo.php`. Viewport 1440 × 900. Every capture was asserted free of
+`Notice:`, `Warning:`, `Deprecated:` and `Fatal error` before being saved.
 
-Bring up the demo store (see `DEVELOPMENT.md`), set the browser to **1440 × 900**
-so the captures are ≥ 1200 px wide, and take these six, in this order:
+| File | Screen | Caption in `readme.txt` |
+| --- | --- | --- |
+| `screenshot-1.png` | Dashboard | Score, coverage, profit health, shipping health |
+| `screenshot-2.png` | Findings, Margin | Current price, target price, difference |
+| `screenshot-3.png` | Findings, Shipping | Charged vs. carrier billed, duplicates |
+| `screenshot-4.png` | Import → cost preview | Detected mapping and first rows, before saving |
+| `screenshot-5.png` | Import → carrier preview | Optional columns marked "not in this file" |
+| `screenshot-6.png` | Settings | Target margin, retention, currency, uninstall |
 
-1. **Dashboard, populated.** `WooCommerce → ProfitGuard` after
-   `bin/run-scan.php`. Must show the ProfitGuard Score with its label, the
-   coverage panel, and the stat cards.
-   Caption: *The dashboard: your ProfitGuard Score, how much of your store it
-   covers, and what is costing you the most.*
-2. **Findings, filtered to critical.** `Findings` tab, severity filter set to
-   Critical, sorted by largest impact.
-   Caption: *Every finding, sorted by evidenced financial impact — never by
-   guesswork.*
-3. **Cost import, the mapping step.** Upload `samples/sample-product-costs.csv`
-   and stop at the preview. Must show detected columns, the mapping selects and
-   the matched/unmatched counts.
-   Caption: *Import supplier costs from CSV. Review the mapping and the match
-   results before anything is saved.*
-4. **Shipping findings.** Findings filtered to the Shipping module, showing at
-   least one `SHIPPING_LOSS` next to one `MISSING_CARRIER_COST` rendered as an
-   em dash.
-   Caption: *Shipping profit per order, from your carrier invoice. Missing costs
-   are shown as missing, never estimated.*
-5. **Settings.** Target margin, currency, retention and the uninstall toggle.
-   Caption: *Set your target margin once. Everything is calculated from your own
-   data, inside your own WordPress.*
-6. **Empty state, before the first scan.** A fresh activation, before any scan.
-   Caption: *A clear starting point. No score is invented before there is
-   anything to score.*
+**Every figure in them is synthetic**, produced by the deterministic seeder. No
+real merchant's catalogue, order numbers or revenue appears anywhere.
 
-Screenshot 6 needs a clean install — take it first, on the ZIP test stack,
-before you seed anything.
+To retake them, bring up the environment as in `DEVELOPMENT.md`, seed it, and
+capture the six URLs:
 
-**Every screenshot must be of the synthetic demo store.** Never capture a real
-merchant's catalogue, order numbers or revenue.
+```
+/wp-admin/admin.php?page=profitguard
+/wp-admin/admin.php?page=profitguard-findings&module=MARGIN&orderby=impact
+/wp-admin/admin.php?page=profitguard-findings&module=SHIPPING&orderby=impact
+/wp-admin/admin.php?page=profitguard-import      (after uploading samples/sample-product-costs.csv)
+/wp-admin/admin.php?page=profitguard-import      (after uploading samples/sample-carrier-costs.csv)
+/wp-admin/admin.php?page=profitguard-settings
+```
+
+Set `woocommerce_coming_soon` to `no` first, or every capture carries a
+"Store coming soon" badge in the admin bar.

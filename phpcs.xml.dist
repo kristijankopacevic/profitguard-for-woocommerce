@@ -8,6 +8,15 @@
 	<exclude-pattern>/node_modules/*</exclude-pattern>
 	<exclude-pattern>/build/*</exclude-pattern>
 	<exclude-pattern>/dist/*</exclude-pattern>
+	<!--
+		Generated build output. release/ holds two more copies of every plugin
+		file (trunk and the tag), so without this every violation - and every
+		clean file - is counted three times and the totals stop meaning
+		anything.
+	-->
+	<exclude-pattern>/release/*</exclude-pattern>
+	<exclude-pattern>/assets-wporg/*</exclude-pattern>
+	<exclude-pattern>/assets-src/*</exclude-pattern>
 
 	<arg name="extensions" value="php"/>
 	<arg name="colors"/>
