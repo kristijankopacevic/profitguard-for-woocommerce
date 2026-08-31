@@ -30,7 +30,7 @@ namespace ProfitGuard\Core;
 use InvalidArgumentException;
 use RuntimeException;
 
-defined( 'ABSPATH' ) || defined( 'PROFITGUARD_TESTING' ) || exit;
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Integer money helpers. Pure PHP: no WordPress, no WooCommerce, no globals.

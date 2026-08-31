@@ -25,7 +25,7 @@ namespace ProfitGuard\Analysis;
 use ProfitGuard\Core\Finding;
 use ProfitGuard\Core\Margin;
 
-defined( 'ABSPATH' ) || defined( 'PROFITGUARD_TESTING' ) || exit;
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Turns products into margin findings.

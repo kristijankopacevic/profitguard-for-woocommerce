@@ -29,7 +29,7 @@ namespace ProfitGuard\Analysis;
 use ProfitGuard\Core\Finding;
 use ProfitGuard\Core\Shipping;
 
-defined( 'ABSPATH' ) || defined( 'PROFITGUARD_TESTING' ) || exit;
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Turns orders into shipping findings.

@@ -1,0 +1,64 @@
+# A throwaway, completely fresh WordPress for testing the built ZIP.
+#
+# Deliberately does NOT bind-mount the source. The plugin can only get in by
+# being installed from dist/profitguard-for-woocommerce.zip, which is the same
+# thing a merchant does - and the only way to prove the ZIP itself is complete
+# rather than the working tree being complete.
+#
+#   bash bin/build-zip.sh
+#   docker compose -p pgzip -f docker-compose.ziptest.yml up -d
+#   docker compose -p pgzip -f docker-compose.ziptest.yml run --rm wpcli "<commands>"
+#   docker compose -p pgzip -f docker-compose.ziptest.yml down -v
+#
+services:
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: wordpress
+      MARIADB_ROOT_PASSWORD: root
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  wordpress:
+    image: wordpress:php8.2-apache
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8081:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DEBUG: 1
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'WP_DEBUG_LOG', true );
+        define( 'WP_DEBUG_DISPLAY', false );
+    volumes:
+      - wp:/var/www/html
+
+  wpcli:
+    image: wordpress:cli-php8.2
+    depends_on:
+      - wordpress
+    user: "33:33"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wp:/var/www/html
+      # Read-only, and only the built artefact.
+      - ./dist:/dist:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["wp --info"]
+
+volumes:
+  wp:

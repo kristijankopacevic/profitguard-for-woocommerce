@@ -21,7 +21,7 @@ namespace ProfitGuard\Import;
 
 use ProfitGuard\Core\Money;
 
-defined( 'ABSPATH' ) || defined( 'PROFITGUARD_TESTING' ) || exit;
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Row validation and normalisation.

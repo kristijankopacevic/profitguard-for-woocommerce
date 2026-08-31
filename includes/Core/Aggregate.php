@@ -27,7 +27,7 @@ declare(strict_types=1);
 
 namespace ProfitGuard\Core;
 
-defined( 'ABSPATH' ) || defined( 'PROFITGUARD_TESTING' ) || exit;
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Roll findings up. Pure PHP: no WordPress, no WooCommerce.

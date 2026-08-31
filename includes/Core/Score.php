@@ -3,14 +3,25 @@
  * The ProfitGuard Score, and coverage.
  *
  * Ported from the ProfitGuard TypeScript core (lib/findings/score.ts) and
- * extended with the coverage reporting this platform asks for.
+ * extended with the coverage reporting this platform asks for. The algorithm
+ * is specified in full on the class below.
  *
- * ---------------------------------------------------------------------------
- * THE ALGORITHM (this comment is the specification; the code implements it)
- * ---------------------------------------------------------------------------
+ * @package ProfitGuard
+ */
+
+declare(strict_types=1);
+
+namespace ProfitGuard\Core;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Deterministic scoring. Pure PHP: no WordPress, no WooCommerce.
  *
- * Two categories are scored independently, each 0-100, each from a ratio of two
- * real quantities:
+ * THE ALGORITHM. This comment is the specification; the code implements it.
+ *
+ * Two categories are scored independently, each 0-100, each from a ratio of
+ * two real quantities:
  *
  *   MARGIN HEALTH        weight 60
  *     Over products where BOTH a cost and a selling price are known:
@@ -43,18 +54,6 @@
  * store did you actually look at". A score of 92 over 12% of the catalog is a
  * different statement from a score of 92 over all of it, and the merchant is
  * shown both numbers rather than one number pretending to be both.
- *
- * @package ProfitGuard
- */
-
-declare(strict_types=1);
-
-namespace ProfitGuard\Core;
-
-defined( 'ABSPATH' ) || defined( 'PROFITGUARD_TESTING' ) || exit;
-
-/**
- * Deterministic scoring. Pure PHP: no WordPress, no WooCommerce.
  */
 final class Score {
 

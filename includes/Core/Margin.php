@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace ProfitGuard\Core;
 
-defined( 'ABSPATH' ) || defined( 'PROFITGUARD_TESTING' ) || exit;
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Deterministic margin maths. Pure PHP: no WordPress, no WooCommerce.
