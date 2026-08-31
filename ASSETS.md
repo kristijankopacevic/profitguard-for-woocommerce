@@ -46,12 +46,22 @@ The plugin *name* may say "for WooCommerce"; the *mark* may not borrow theirs.
 
 ## Generating them, free
 
-`bin/make-assets.sh` produces every file above using ImageMagick from a Docker
-image. Nothing is installed on your machine and nothing is paid for.
+`bin/make-assets.sh` draws the icon and both banner sizes with ImageMagick,
+run from a Docker image so nothing is installed on your machine and nothing is
+paid for.
 
 ```bash
 bash bin/make-assets.sh    # -> assets-wporg/
 ```
+
+Two caveats, stated plainly: **this script has not been executed** — Docker ran
+out of disk on the build machine before it could be — so treat it as a starting
+point to check rather than a finished tool. And unlike the Compose files, it
+pulls `dpokidov/imagemagick`, which is a third-party image rather than an
+official one. It is free and widely used, but if you would rather not, the same
+result comes from any local ImageMagick, Inkscape, or simply opening
+`assets-wporg/.icon.svg` in a vector editor and exporting the two PNG sizes by
+hand. The SVG in the script is the actual design; the rest is just rasterising.
 
 For the screenshots, use a browser rather than a generator — real screenshots of
 the real plugin are what the directory wants, and fabricating them would be

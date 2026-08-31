@@ -98,6 +98,91 @@
 		</properties>
 	</rule>
 
+	<!--
+		bin/ is developer tooling: WP-CLI scripts that build the demo store, run a
+		scan synchronously and smoke-render the admin pages. NONE of it ships - see
+		the allow-list in bin/build-zip.sh - and it runs only on a developer's own
+		throwaway Docker WordPress. It is still linted, because a broken dev script
+		wastes just as much time as a broken plugin; but a handful of sniffs are
+		wrong for this file type specifically, and each exclusion below says why.
+	-->
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<!--
+			`wp eval-file` includes the script at GLOBAL scope, so every ordinary
+			local variable in it is, technically, a global. Prefixing 74 loop
+			counters with `profitguard_` would satisfy the sniff and make the
+			scripts materially harder to read, for no collision risk: the file is
+			included once, by hand, in a CLI process that then exits.
+		-->
+		<exclude-pattern>/bin/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.WP.GlobalVariablesOverride">
+		<!-- Same cause: global scope is an artefact of eval-file, not a design. -->
+		<exclude-pattern>/bin/*</exclude-pattern>
+	</rule>
+
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound">
+		<!--
+			tests/bootstrap.php defines ABSPATH. It is meant to: every shipped
+			file guards itself with `defined( 'ABSPATH' ) || exit;`, which is the
+			canonical form the WordPress.org Plugin Check requires, and the pure
+			core is unit tested WITHOUT WordPress. Defining the constant in the
+			test bootstrap is what lets those two facts coexist. The alternative
+			- a second, plugin-specific escape hatch in the guard itself - is a
+			bypass shipped to users, and Plugin Check rejects it, correctly.
+		-->
+		<exclude-pattern>/tests/bootstrap.php</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.WP.AlternativeFunctions.rand_mt_rand">
+		<!--
+			The seeder needs REPRODUCIBLE randomness, which is the one case where
+			mt_rand is right and wp_rand is wrong. A fixed mt_srand seed makes the
+			demo store byte-identical on every machine, so a documented figure or a
+			screenshot caption stays true. Nothing here is security-sensitive.
+		-->
+		<exclude-pattern>/bin/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.WP.AlternativeFunctions.rand_seeding_mt_srand">
+		<exclude-pattern>/bin/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents">
+		<!--
+			WP_Filesystem exists so that a PLUGIN can write through a user's FTP or
+			SSH credentials. A CLI script writing a temporary CSV into the container
+			it is already running inside has no such indirection to respect.
+		-->
+		<exclude-pattern>/bin/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents">
+		<!-- Reads a local sample CSV off disk. wp_remote_get fetches over HTTP. -->
+		<exclude-pattern>/bin/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.WP.AlternativeFunctions.file_system_operations_is_writable">
+		<!-- Checks whether the mounted samples/ directory can be written to. -->
+		<exclude-pattern>/bin/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.DB.SlowDBQuery">
+		<!--
+			The seeder deletes its own previous demo rows by looking them up on the
+			_profitguard_demo meta key. That IS a meta query and it is exactly the
+			right one: it is what makes re-running the seeder safe. It runs once, on
+			a developer machine, against sixty products.
+		-->
+		<exclude-pattern>/bin/*</exclude-pattern>
+	</rule>
+
+	<!--
+		WPCS only knows WordPress core's capabilities, so WooCommerce's own read
+		as typos. This is the capability the whole plugin gates on.
+	-->
+	<rule ref="WordPress.WP.Capabilities">
+		<properties>
+			<property name="custom_capabilities" type="array">
+				<element value="manage_woocommerce"/>
+			</property>
+		</properties>
+	</rule>
+
 	<!-- The minimum WordPress this plugin supports. -->
 	<config name="minimum_wp_version" value="6.4"/>
 

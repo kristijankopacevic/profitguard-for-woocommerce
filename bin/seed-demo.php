@@ -2,6 +2,8 @@
 /**
  * Demo fixture data for local development.
  *
+ * Run it with:
+ *
  *     docker compose run --rm wpcli "wp eval-file wp-content/plugins/profitguard-for-woocommerce/bin/seed-demo.php"
  *
  * Builds a store that produces every finding type, so the dashboard, the
@@ -26,12 +28,64 @@ if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 	exit( 1 );
 }
 
+/*
+ * Both sample CSVs are denominated in EUR, and so is every price this script
+ * writes. WooCommerce defaults a fresh install to USD, and the importer then
+ * correctly rejects all 20 cost rows as a currency mismatch - correct
+ * behaviour, useless demo. Set the store currency to match the data it is
+ * about to be given.
+ */
+update_option( 'woocommerce_currency', 'EUR' );
+
+/*
+ * Clear ProfitGuard's own analytics tables.
+ *
+ * The seeder deletes and recreates its demo products and orders, which means
+ * every previously imported carrier row now points at an order id that no
+ * longer exists. Left in place they accumulate: a second run turned one
+ * POSSIBLE_DUPLICATE_CARRIER_ROW into seventy-one, because from the detector's
+ * point of view the store really did have two invoices for every shipment.
+ *
+ * This is a development script for a throwaway store. It says so, loudly,
+ * because the same statement on a real store would delete a merchant's
+ * imported carrier invoices.
+ */
+global $wpdb;
+WP_CLI::log( 'Clearing ProfitGuard findings, carrier rows and run history.' );
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+$wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}profitguard_findings" );
+$wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}profitguard_carrier_costs" );
+$wpdb->query( "TRUNCATE TABLE {$wpdb->prefix}profitguard_runs" );
+// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+delete_option( 'profitguard_scan_state' );
+
+/**
+ * Where to write the regenerated sample CSVs.
+ *
+ * Normally samples/ sits beside bin/; on the ZIP test stack the two are mounted
+ * separately, so look there too. Returns '' when neither is writable, which is
+ * not an error - the committed samples are already correct, because this script
+ * is deterministic.
+ *
+ * @param string $file File name.
+ * @return string Writable path, or '' when there is nowhere to write.
+ */
+function profitguard_sample_path( $file ) {
+	foreach ( array( __DIR__ . '/../samples/', '/pgsamples/' ) as $dir ) {
+		if ( is_dir( $dir ) && is_writable( $dir ) ) {
+			return $dir . $file;
+		}
+	}
+	return '';
+}
+
+
 use ProfitGuard\Woo\CostProvider;
 
 /**
  * A seeded pseudo-random generator.
  *
- * mt_srand with a fixed seed so the demo store is identical on every machine -
+ * Seeded with mt_srand so the demo store is identical on every machine -
  * otherwise screenshots, documentation figures and any expectation written
  * against them drift apart.
  */
@@ -76,12 +130,12 @@ $purged_orders   = 0;
 
 $existing = get_posts(
 	array(
-		'post_type'      => array( 'product', 'product_variation' ),
-		'post_status'    => 'any',
-		'numberposts'    => -1,
-		'fields'         => 'ids',
-		'meta_key'       => '_profitguard_demo',
-		'meta_value'     => '1',
+		'post_type'   => array( 'product', 'product_variation' ),
+		'post_status' => 'any',
+		'numberposts' => -1,
+		'fields'      => 'ids',
+		'meta_key'    => '_profitguard_demo',
+		'meta_value'  => '1',
 	)
 );
 foreach ( $existing as $id ) {
@@ -104,7 +158,13 @@ for ( $n = 0; $n < 400; $n++ ) {
 	}
 }
 
-foreach ( wc_get_orders( array( 'limit' => -1, 'return' => 'ids', 'status' => 'any' ) ) as $order_id ) {
+foreach ( wc_get_orders(
+	array(
+		'limit'  => -1,
+		'return' => 'ids',
+		'status' => 'any',
+	)
+) as $order_id ) {
 	$order = wc_get_order( $order_id );
 	if ( $order && '1' === (string) $order->get_meta( '_profitguard_demo' ) ) {
 		$order->delete( true );
@@ -118,7 +178,7 @@ if ( $purged_products || $purged_orders ) {
 
 WP_CLI::log( 'Seeding demo products...' );
 
-$created  = 0;
+$created   = 0;
 $with_cost = 0;
 $skus      = array();
 
@@ -169,7 +229,7 @@ for ( $i = 0; $i < 60; $i++ ) {
 
 	CostProvider::set_cost( $product_id, max( 1, $cost ) );
 	++$with_cost;
-}
+}//end for
 
 WP_CLI::log( sprintf( '  %d products, %d with a cost.', $created, $with_cost ) );
 
@@ -195,8 +255,8 @@ WP_CLI::log( sprintf( '  %d products given a cost increase.', $bumped ) );
 
 WP_CLI::log( 'Seeding demo orders...' );
 
-$orders  = 0;
-$refs    = array();
+$orders      = 0;
+$refs        = array();
 $product_ids = wc_get_products(
 	array(
 		'limit'      => -1,
@@ -230,6 +290,17 @@ for ( $i = 0; $i < 120; $i++ ) {
 	$subtotal = (float) $order->get_subtotal();
 	$charged  = $subtotal >= 50 ? 0.0 : round( mt_rand( 499, 999 ) / 100, 2 );
 
+	/*
+	 * Every fourth order charges a flat EUR 19.90 - a heavier or express rate.
+	 * Carrier costs below top out around EUR 18, so these are the orders where
+	 * shipping actually turns a profit. Without them the fixture would only
+	 * ever produce losses, and SHIPPING_PROFIT would never be exercised: a
+	 * demo that cannot show a good outcome is not a demo of a health tool.
+	 */
+	if ( 0 === $i % 4 ) {
+		$charged = 19.90;
+	}
+
 	$item = new WC_Order_Item_Shipping();
 	$item->set_method_title( 'Flat rate' );
 	$item->set_method_id( 'flat_rate' );
@@ -243,7 +314,7 @@ for ( $i = 0; $i < 120; $i++ ) {
 
 	++$orders;
 	$refs[] = $order->get_order_number();
-}
+}//end for
 
 WP_CLI::log( sprintf( '  %d orders.', $orders ) );
 
@@ -270,7 +341,17 @@ foreach ( $refs as $index => $ref ) {
 	++$n;
 }
 
-$path = __DIR__ . '/../samples/sample-carrier-costs.csv';
+/*
+ * Two rows for orders that do not exist. Carrier invoices routinely contain
+ * shipments from a different channel, a cancelled order, or a typo, and the
+ * merchant needs to see them flagged rather than silently dropped. This is what
+ * makes UNMATCHED_CARRIER_ROW appear.
+ */
+$rows[] = 'PG-NOT-AN-ORDER-1,JD0000999001,DHL,7.40,EUR';
+$rows[] = '99999999,JD0000999002,GLS,12.15,EUR';
+$n     += 2;
+
+$path = profitguard_sample_path( 'sample-carrier-costs.csv' );
 file_put_contents( $path, implode( "\n", $rows ) . "\n" );
 WP_CLI::log( sprintf( '  %d carrier rows written to samples/sample-carrier-costs.csv', $n ) );
 
@@ -278,6 +359,7 @@ WP_CLI::log( sprintf( '  %d carrier rows written to samples/sample-carrier-costs
  * A product cost list covering products the fixture deliberately left without
  * one, so importing it visibly reduces the "missing a cost" count.
  */
+
 /*
  * SEMICOLON-DELIMITED, on purpose.
  *
@@ -294,6 +376,19 @@ foreach ( $skus as $index => $sku ) {
 	if ( 0 !== $index % 3 ) {
 		continue;
 	}
+
+	/*
+	 * Deliberately leave every fourth one OUT of the supplier list. A real
+	 * cost list never covers the whole catalogue, and if the import filled
+	 * every gap then the state this plugin exists to make visible - a cost we
+	 * simply do not have - would vanish from the demo the moment you imported.
+	 * These products keep producing MISSING_COST, and keep coverage below
+	 * 100%, which is the honest picture.
+	 */
+	if ( 0 === $index % 12 ) {
+		continue;
+	}
+
 	$product_id = wc_get_product_id_by_sku( $sku );
 	$product    = $product_id ? wc_get_product( $product_id ) : null;
 	if ( ! $product ) {
@@ -303,12 +398,12 @@ foreach ( $skus as $index => $sku ) {
 	// Costs written in EUROPEAN format, on purpose: the importer has to cope
 	// with a comma decimal separator, and a sample that only uses dots would
 	// never prove it.
-	$cost = number_format( $price * ( mt_rand( 40, 95 ) / 100 ), 2, ',', '' );
+	$cost        = number_format( $price * ( mt_rand( 40, 95 ) / 100 ), 2, ',', '' );
 	$cost_rows[] = sprintf( '%s;%s;EUR;%s', $sku, $cost, $product->get_name() );
 	++$c;
-}
+}//end foreach
 
-$cost_path = __DIR__ . '/../samples/sample-product-costs.csv';
+$cost_path = profitguard_sample_path( 'sample-product-costs.csv' );
 file_put_contents( $cost_path, implode( "\n", $cost_rows ) . "\n" );
 WP_CLI::log( sprintf( '  %d cost rows written to samples/sample-product-costs.csv', $c ) );
 

@@ -57,6 +57,14 @@ services:
       - wp:/var/www/html
       # Read-only, and only the built artefact.
       - ./dist:/dist:ro
+      # The dev scripts, mounted OUTSIDE the plugin directory. They are not part
+      # of the plugin and are not in the ZIP; this lets the seeder drive the
+      # ZIP-installed copy end to end without putting a single unpackaged file
+      # where WordPress would load it.
+      - ./bin:/pgbin:ro
+      # Writable: the seeder REGENERATES the samples so they always match the
+      # store it just built. The plugin still comes only from the ZIP.
+      - ./samples:/pgsamples
     entrypoint: ["/bin/sh", "-c"]
     command: ["wp --info"]
 

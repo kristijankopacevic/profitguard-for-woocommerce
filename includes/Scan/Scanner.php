@@ -223,10 +223,10 @@ final class Scanner {
 			Repository::insert_findings( $scan_id, $findings );
 		}
 
-		$done[ (string) $offset ]  = true;
-		$state['products_done']    = $done;
-		$state['margin']           = $totals;
-		$state['product_offset']   = $offset + Catalog::BATCH_SIZE;
+		$done[ (string) $offset ] = true;
+		$state['products_done']   = $done;
+		$state['margin']          = $totals;
+		$state['product_offset']  = $offset + Catalog::BATCH_SIZE;
 		self::save_state( $state );
 
 		$more = count( $ids ) === Catalog::BATCH_SIZE;

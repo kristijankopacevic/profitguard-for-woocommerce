@@ -10,9 +10,11 @@
  * @package ProfitGuard
  */
 
-if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) { exit( 1 ); }
+if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+	exit( 1 ); }
 wp_set_current_user( 1 );
-if ( ! current_user_can( 'manage_woocommerce' ) ) { WP_CLI::error( 'admin lacks manage_woocommerce' ); }
+if ( ! current_user_can( 'manage_woocommerce' ) ) {
+	WP_CLI::error( 'admin lacks manage_woocommerce' ); }
 
 $pages = array(
 	'dashboard' => array( '\ProfitGuard\Admin\Pages', 'dashboard' ),
@@ -32,14 +34,15 @@ foreach ( $pages as $name => $cb ) {
 	}
 	$len = strlen( $html );
 	// A page that renders but contains no closing wrapper has died mid-output.
-	$ok  = ( $len > 500 && false !== strpos( $html, 'profitguard' ) );
+	$ok = ( $len > 500 && false !== strpos( $html, 'profitguard' ) );
 	WP_CLI::log( sprintf( '%-10s %6d bytes  %s', $name, $len, $ok ? 'OK' : 'SUSPECT' ) );
 	if ( 'dashboard' === $name ) {
 		foreach ( array( 'ProfitGuard Score', 'Coverage', 'Profit health', 'Shipping health', 'Highest priority' ) as $needle ) {
-			WP_CLI::log( sprintf( '   %-22s %s', $needle, false !== strpos( $html, $needle ) ? 'present' : 'MISSING' ) );
+			$found = ( false !== strpos( $html, $needle ) );
+			WP_CLI::log( sprintf( '   %-22s %s', $needle, $found ? 'present' : 'MISSING' ) );
 		}
 		// The honesty rule, at the last step before a human reads it.
 		WP_CLI::log( sprintf( '   %-22s %s', 'em-dash for unknown', false !== strpos( $html, 'profitguard-unknown' ) ? 'present' : 'not needed' ) );
 	}
-}
+}//end foreach
 WP_CLI::success( 'all pages rendered' );

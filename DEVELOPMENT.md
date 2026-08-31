@@ -73,14 +73,23 @@ docker compose run --rm wpcli "
 "
 ```
 
-This creates 60 products and 40 orders covering every state the plugin has a
+This creates 60 products and 120 orders covering every state the plugin has a
 finding for: healthy margins, low, critical, negative, missing cost, sale prices
 eating the margin, cost increases, shipping profit, shipping loss, high shipping
 loss, missing carrier costs, an unmatched carrier row and a duplicate.
 
 **The seeder is idempotent.** It tags everything it creates with
 `_profitguard_demo` and deletes only its own rows, so you can re-run it as often
-as you like without tripping WooCommerce's duplicate-SKU check.
+as you like without tripping WooCommerce's duplicate-SKU check. It also
+TRUNCATES ProfitGuard's three tables and sets the store currency to EUR, because
+its products, its orders and both sample CSVs are all denominated in EUR and a
+fresh WooCommerce install defaults to USD - against which the importer correctly
+rejects every row. Never run it on a store whose data you want to keep.
+
+It also regenerates `samples/*.csv` so they always describe the store it just
+built. The generated cost list deliberately leaves five products uncovered, so
+`MISSING_COST` and a coverage figure below 100% survive the import - the state
+this plugin exists to make visible should not disappear the moment you use it.
 
 `bin/run-scan.php` runs the scan synchronously rather than through Action
 Scheduler, so you get results immediately instead of waiting for cron.
