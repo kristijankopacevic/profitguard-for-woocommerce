@@ -151,7 +151,7 @@ final class Money {
 	/**
 	 * Absolute value that cannot overflow.
 	 *
-	 * abs( PHP_INT_MIN ) is not representable and PHP returns a float for it.
+	 * PHP cannot represent abs( PHP_INT_MIN ) and PHP returns a float for it.
 	 *
 	 * @param int $n Value.
 	 * @return int Absolute value.
@@ -195,9 +195,7 @@ final class Money {
 		return $bp / 100;
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Parsing
-	 * --------------------------------------------------------------- */
+	// Parsing.
 
 	/**
 	 * Parse a machine-written decimal into minor units.
@@ -324,10 +322,10 @@ final class Money {
 		if ( false === $last_comma && false === $last_dot ) {
 			$normalized = $string;
 		} elseif ( false === $last_dot || ( false !== $last_comma && $last_comma > $last_dot ) ) {
-			// Comma is the decimal separator (EU): 1.234,56
+			// Comma is the decimal separator, as in 1.234,56 (EU).
 			$normalized = str_replace( ',', '.', str_replace( '.', '', $string ) );
 		} else {
-			// Dot is the decimal separator (US): 1,234.56
+			// Dot is the decimal separator, as in 1,234.56 (US).
 			$normalized = str_replace( ',', '', $string );
 		}
 
@@ -345,9 +343,9 @@ final class Money {
 		 */
 		$single_separator = ( false === $last_comma ) !== ( false === $last_dot );
 		if ( $single_separator ) {
-			$separator_index = ( false === $last_comma ) ? $last_dot : $last_comma;
-			$trailing        = strlen( $string ) - $separator_index - 1;
-			$leading         = $separator_index;
+			$separator_index  = ( false === $last_comma ) ? $last_dot : $last_comma;
+			$trailing         = strlen( $string ) - $separator_index - 1;
+			$leading          = $separator_index;
 			$starts_with_zero = 0 === strpos( $string, '0' );
 			if ( 3 === $trailing && $leading > 0 && $leading <= 3 && ! $starts_with_zero ) {
 				$normalized = str_replace( array( '.', ',' ), '', $string );
@@ -388,9 +386,7 @@ final class Money {
 		return self::parse_amount_to_minor( $string );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Formatting
-	 * --------------------------------------------------------------- */
+	// Formatting.
 
 	/**
 	 * Format minor units for display, without a currency symbol.

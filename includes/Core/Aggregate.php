@@ -103,7 +103,7 @@ final class Aggregate {
 				++$without_amount;
 				++$by_module[ $module ]['without_amount'];
 			}
-		}
+		}//end foreach
 
 		return array(
 			'total_minor'    => $total_minor,

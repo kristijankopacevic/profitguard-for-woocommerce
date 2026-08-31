@@ -1,0 +1,257 @@
+/*
+ * ProfitGuard admin styles.
+ *
+ * Built on WordPress admin conventions rather than against them: no custom
+ * font, no colour scheme of its own, no layout framework. A plugin screen that
+ * looks like the rest of wp-admin is one a merchant can use without learning
+ * anything, and it stays correct when WordPress changes its own styles.
+ *
+ * Colour is reserved for severity. Everything else is greyscale, so the only
+ * saturated things on the page are the ones that mean something.
+ */
+
+.profitguard-tabs {
+	margin-bottom: 1.5em;
+}
+
+/* --- toolbar --------------------------------------------------------- */
+
+.profitguard-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin: 1em 0;
+}
+
+.profitguard-inline-form {
+	display: inline-block;
+	margin: 0;
+}
+
+.profitguard-storage,
+.profitguard-count {
+	color: #646970;
+	font-size: 12px;
+}
+
+/* --- score ----------------------------------------------------------- */
+
+.profitguard-score {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 24px;
+	align-items: flex-start;
+	padding: 20px;
+	margin: 1em 0 2em;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+
+.profitguard-score-value {
+	min-width: 180px;
+}
+
+.profitguard-score-value strong {
+	font-size: 44px;
+	line-height: 1;
+	font-weight: 600;
+}
+
+.profitguard-score-value span {
+	color: #646970;
+	font-size: 14px;
+}
+
+.profitguard-score-value em {
+	display: block;
+	margin-top: 4px;
+	font-style: normal;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.profitguard-coverage {
+	flex: 1;
+	min-width: 260px;
+}
+
+.profitguard-coverage h3 {
+	margin: 0 0 4px;
+}
+
+.profitguard-coverage ul {
+	margin: 8px 0 0;
+}
+
+.profitguard-coverage li {
+	display: grid;
+	grid-template-columns: 110px 60px 1fr;
+	gap: 8px;
+	align-items: baseline;
+	padding: 4px 0;
+	border-top: 1px solid #f0f0f1;
+}
+
+.profitguard-coverage li em {
+	font-style: normal;
+	color: #646970;
+	font-size: 12px;
+}
+
+/* --- stat cards ------------------------------------------------------- */
+
+.profitguard-cards {
+	display: grid;
+	grid-template-columns: repeat( auto-fit, minmax( 200px, 1fr ) );
+	gap: 12px;
+	margin: 1em 0 2em;
+}
+
+.profitguard-card {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 16px;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+
+.profitguard-card-label {
+	color: #646970;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.profitguard-card-value {
+	font-size: 26px;
+	font-weight: 600;
+	line-height: 1.2;
+	/* Tabular figures so a column of numbers lines up on the decimal. */
+	font-variant-numeric: tabular-nums;
+}
+
+.profitguard-card-note {
+	color: #646970;
+	font-size: 12px;
+}
+
+/*
+ * An amount we could not establish. Rendered as an em dash, never a zero -
+ * the visual half of the rule the whole plugin is built around.
+ */
+.profitguard-unknown {
+	color: #8c8f94;
+}
+
+/* --- findings table --------------------------------------------------- */
+
+.profitguard-findings td,
+.profitguard-findings th {
+	vertical-align: top;
+}
+
+.profitguard-findings .profitguard-action {
+	color: #50575e;
+	max-width: 320px;
+}
+
+.profitguard-ref {
+	display: block;
+	color: #646970;
+	font-size: 12px;
+}
+
+/*
+ * Severity is the only place colour is used. Each pairing is a light tint with
+ * dark text of the same hue, which carries its own contrast rather than relying
+ * on the surrounding theme.
+ */
+.profitguard-sev {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 10px;
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.profitguard-sev-critical {
+	background: #fcf0f1;
+	color: #8a2424;
+}
+
+.profitguard-sev-high {
+	background: #fcf3e8;
+	color: #8a5000;
+}
+
+.profitguard-sev-medium {
+	background: #fdf8e3;
+	color: #7a6000;
+}
+
+.profitguard-sev-low,
+.profitguard-sev-info {
+	background: #f0f0f1;
+	color: #50575e;
+}
+
+/* --- filters and forms ------------------------------------------------ */
+
+.profitguard-filters {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	padding: 12px;
+	margin: 1em 0;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+
+.profitguard-filters label {
+	font-size: 12px;
+	color: #646970;
+}
+
+.profitguard-upload {
+	padding: 16px;
+	margin: 0 0 2em;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+
+.profitguard-upload .profitguard-card-note {
+	margin: 8px 0 0;
+}
+
+/* --- empty state ------------------------------------------------------ */
+
+.profitguard-empty {
+	padding: 32px;
+	margin: 1em 0;
+	text-align: center;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+
+.profitguard-empty h2 {
+	margin-top: 0;
+}
+
+/* --- footer ----------------------------------------------------------- */
+
+.profitguard-privacy {
+	margin-top: 2.5em;
+	padding-top: 1em;
+	border-top: 1px solid #dcdcde;
+	color: #646970;
+	font-size: 12px;
+}

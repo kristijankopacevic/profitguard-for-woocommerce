@@ -19,18 +19,14 @@ use RuntimeException;
 
 final class MoneyTest extends TestCase {
 
-	/* --------------------------------------------------------------- *
-	 * Platform
-	 * --------------------------------------------------------------- */
+	// Platform.
 
 	public function test_platform_is_64_bit(): void {
 		Money::assert_platform();
 		$this->assertSame( 8, PHP_INT_SIZE );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * mul_div_round
-	 * --------------------------------------------------------------- */
+	// mul_div_round.
 
 	public function test_mul_div_round_computes_exactly(): void {
 		$this->assertSame( 50, Money::mul_div_round( 100, 50, 100 ) );
@@ -69,9 +65,7 @@ final class MoneyTest extends TestCase {
 		Money::mul_div_round( PHP_INT_MAX, 2, 1 );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * mul_div_ceil
-	 * --------------------------------------------------------------- */
+	// mul_div_ceil.
 
 	public function test_mul_div_ceil_rounds_toward_positive_infinity(): void {
 		$this->assertSame( 3, Money::mul_div_ceil( 5, 1, 2 ) );
@@ -84,9 +78,7 @@ final class MoneyTest extends TestCase {
 		Money::mul_div_ceil( 5, 1, 0 );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Basis points
-	 * --------------------------------------------------------------- */
+	// Basis points.
 
 	public function test_apply_bp_takes_a_percentage_of_an_amount(): void {
 		// 14.5% of EUR 100.00
@@ -99,9 +91,7 @@ final class MoneyTest extends TestCase {
 		$this->assertSame( 30.0, Money::bp_to_percent( 3000 ) );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * parse_decimal_to_minor - the strict, machine-format parser
-	 * --------------------------------------------------------------- */
+	// parse_decimal_to_minor - the strict, machine-format parser.
 
 	public function test_parse_decimal_handles_woocommerce_prices(): void {
 		$this->assertSame( 2999, Money::parse_decimal_to_minor( '29.99' ) );
@@ -143,9 +133,7 @@ final class MoneyTest extends TestCase {
 		$this->assertNull( Money::parse_decimal_to_minor( null ) );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * parse_amount_to_minor - the human/spreadsheet parser
-	 * --------------------------------------------------------------- */
+	// parse_amount_to_minor - the human/spreadsheet parser.
 
 	public function test_parse_amount_handles_us_convention(): void {
 		$this->assertSame( 123456, Money::parse_amount_to_minor( '1,234.56' ) );
@@ -205,9 +193,7 @@ final class MoneyTest extends TestCase {
 		$this->assertSame( 3000, Money::parse_amount_to_minor( 30 ) );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Percentages
-	 * --------------------------------------------------------------- */
+	// Percentages.
 
 	public function test_parse_percent_to_bp(): void {
 		$this->assertSame( 1450, Money::parse_percent_to_bp( '14.5%' ) );
@@ -216,9 +202,7 @@ final class MoneyTest extends TestCase {
 		$this->assertNull( Money::parse_percent_to_bp( 'x' ) );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Formatting
-	 * --------------------------------------------------------------- */
+	// Formatting.
 
 	public function test_format_minor_groups_thousands(): void {
 		$this->assertSame( '1,234.56', Money::format_minor( 123456 ) );

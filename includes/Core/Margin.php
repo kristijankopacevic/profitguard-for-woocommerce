@@ -38,9 +38,7 @@ final class Margin {
 	 */
 	public const BP_100 = Money::BP_100;
 
-	/* --------------------------------------------------------------- *
-	 * Status values
-	 * --------------------------------------------------------------- */
+	// Status values.
 
 	public const STATUS_HEALTHY         = 'HEALTHY';
 	public const STATUS_LOW_MARGIN      = 'LOW_MARGIN';
@@ -58,9 +56,7 @@ final class Margin {
 	public const DEFAULT_WARNING_BAND_BP  = 500;
 	public const DEFAULT_CRITICAL_BAND_BP = 1500;
 
-	/* --------------------------------------------------------------- *
-	 * Gross margin
-	 * --------------------------------------------------------------- */
+	// Gross margin.
 
 	/**
 	 * Gross margin in basis points: (selling - cost) / selling.
@@ -121,9 +117,7 @@ final class Margin {
 		return $selling_price_minor - $cost_minor;
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Cost change
-	 * --------------------------------------------------------------- */
+	// Cost change.
 
 	/**
 	 * Supplier cost change in basis points: (new - old) / old.
@@ -146,16 +140,14 @@ final class Margin {
 		return Money::mul_div_round( $new_cost_minor - $old_cost_minor, self::BP_100, $old_cost_minor );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Recommended selling price
-	 * --------------------------------------------------------------- */
+	// Recommended selling price.
 
 	/**
-	 * The selling price that achieves `$target_margin_bp` at `$cost_minor`:
+	 * The selling price that achieves `$target_margin_bp` at `$cost_minor`.
 	 *
-	 *     price = cost / (1 - target_margin)
+	 * The formula is `price = cost / (1 - target_margin)`.
 	 *
-	 * ROUNDS UP, always. Rounding to nearest can produce a price whose actual
+	 * Rounds UP, always. Rounding to nearest can produce a price whose actual
 	 * margin is a hair BELOW the target, which would make the whole
 	 * recommendation self-defeating: a merchant who followed it would still
 	 * miss their target. The invariant
@@ -204,9 +196,7 @@ final class Margin {
 		return max( 0, $recommended_minor - $current_selling_minor );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Status
-	 * --------------------------------------------------------------- */
+	// Status.
 
 	/**
 	 * Classify a margin against a target.
@@ -270,9 +260,7 @@ final class Margin {
 		}
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Volume-weighted impact
-	 * --------------------------------------------------------------- */
+	// Volume-weighted impact.
 
 	/**
 	 * Monthly monetary impact of a margin gap, computable ONLY when a real
@@ -297,9 +285,7 @@ final class Margin {
 		return Money::mul_div_round( $per_unit_minor, $monthly_units, 1 );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * The whole picture for one product
-	 * --------------------------------------------------------------- */
+	// The whole picture for one product.
 
 	/**
 	 * Compute every derived number for one product in one place, so a screen,

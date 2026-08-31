@@ -18,9 +18,7 @@ use ProfitGuard\Core\Margin;
 
 final class MarginTest extends TestCase {
 
-	/* --------------------------------------------------------------- *
-	 * Gross margin
-	 * --------------------------------------------------------------- */
+	// Gross margin.
 
 	public function test_gross_margin_divides_by_the_selling_price(): void {
 		// EUR 10.00 selling, EUR 8.00 cost -> 20%
@@ -71,9 +69,7 @@ final class MarginTest extends TestCase {
 		$this->assertSame( 10000, Margin::gross_margin_bp( 1000, 0 ) );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Markup - deliberately not derived from margin
-	 * --------------------------------------------------------------- */
+	// Markup - deliberately not derived from margin.
 
 	public function test_markup_divides_by_the_cost(): void {
 		// Buying at EUR 8 and selling at EUR 10 is a 20% margin but a 25% markup.
@@ -130,9 +126,7 @@ final class MarginTest extends TestCase {
 		}
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Profit per unit
-	 * --------------------------------------------------------------- */
+	// Profit per unit.
 
 	public function test_profit_per_unit(): void {
 		$this->assertSame( 200, Margin::profit_per_unit_minor( 1000, 800 ) );
@@ -141,9 +135,7 @@ final class MarginTest extends TestCase {
 		$this->assertNull( Margin::profit_per_unit_minor( 1000, null ) );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Cost change
-	 * --------------------------------------------------------------- */
+	// Cost change.
 
 	public function test_cost_change(): void {
 		// EUR 0.72 -> EUR 0.81 is +12.5%
@@ -158,9 +150,7 @@ final class MarginTest extends TestCase {
 		$this->assertNull( Margin::cost_change_bp( 500, null ) );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Recommended price - THE property that must survive the port
-	 * --------------------------------------------------------------- */
+	// Recommended price - THE property that must survive the port.
 
 	public function test_recommended_price_reaches_the_target(): void {
 		$this->assertSame( 3500, Margin::recommended_price_minor( 2450, 3000 ) );
@@ -224,9 +214,7 @@ final class MarginTest extends TestCase {
 		$this->assertSame( 0, Margin::recommended_price_minor( 0, 3000 ) );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Price increase required
-	 * --------------------------------------------------------------- */
+	// Price increase required.
 
 	public function test_price_increase_required(): void {
 		$this->assertSame( 501, Margin::price_increase_required_minor( 2999, 3500 ) );
@@ -238,9 +226,7 @@ final class MarginTest extends TestCase {
 		$this->assertSame( 0, Margin::price_increase_required_minor( 5000, 3500 ) );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Status
-	 * --------------------------------------------------------------- */
+	// Status.
 
 	public function test_status_healthy_at_or_above_target(): void {
 		$this->assertSame( Margin::STATUS_HEALTHY, Margin::status( 3000, 3000 ) );
@@ -281,9 +267,7 @@ final class MarginTest extends TestCase {
 		);
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Monthly impact
-	 * --------------------------------------------------------------- */
+	// Monthly impact.
 
 	public function test_monthly_impact_needs_a_real_volume(): void {
 		$this->assertSame( 15030, Margin::monthly_impact_minor( 501, 30 ) );
@@ -297,9 +281,7 @@ final class MarginTest extends TestCase {
 		$this->assertNotSame( 0, Margin::monthly_impact_minor( 501, 0 ) );
 	}
 
-	/* --------------------------------------------------------------- *
-	 * evaluate() - one product, every number
-	 * --------------------------------------------------------------- */
+	// evaluate() - one product, every number.
 
 	public function test_evaluate_produces_a_consistent_picture(): void {
 		$result = Margin::evaluate( 2999, 2450, 3000, 30 );

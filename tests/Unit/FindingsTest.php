@@ -47,9 +47,7 @@ final class FindingsTest extends TestCase {
 		);
 	}
 
-	/* ================================================================ *
-	 * Aggregation - unknown is null, never zero
-	 * ================================================================ */
+	// Aggregation - unknown is null, never zero.
 
 	public function test_sums_only_findings_that_state_an_amount(): void {
 		$summary = Aggregate::summarise(
@@ -92,9 +90,24 @@ final class FindingsTest extends TestCase {
 	public function test_keeps_the_distinction_per_module(): void {
 		$summary = Aggregate::summarise(
 			array(
-				$this->finding( array( 'module' => Finding::MODULE_MARGIN, 'impact_minor' => 81400 ) ),
-				$this->finding( array( 'module' => Finding::MODULE_SHIPPING, 'impact_minor' => 42600 ) ),
-				$this->finding( array( 'module' => Finding::MODULE_SHIPPING, 'impact_minor' => null ) ),
+				$this->finding(
+					array(
+						'module'       => Finding::MODULE_MARGIN,
+						'impact_minor' => 81400,
+					)
+				),
+				$this->finding(
+					array(
+						'module'       => Finding::MODULE_SHIPPING,
+						'impact_minor' => 42600,
+					)
+				),
+				$this->finding(
+					array(
+						'module'       => Finding::MODULE_SHIPPING,
+						'impact_minor' => null,
+					)
+				),
 			)
 		);
 
@@ -113,9 +126,24 @@ final class FindingsTest extends TestCase {
 	public function test_counts_by_severity_and_type(): void {
 		$summary = Aggregate::summarise(
 			array(
-				$this->finding( array( 'severity' => Finding::SEVERITY_CRITICAL, 'type' => Finding::TYPE_NEGATIVE_MARGIN ) ),
-				$this->finding( array( 'severity' => Finding::SEVERITY_CRITICAL, 'type' => Finding::TYPE_NEGATIVE_MARGIN ) ),
-				$this->finding( array( 'severity' => Finding::SEVERITY_LOW, 'type' => Finding::TYPE_MISSING_COST ) ),
+				$this->finding(
+					array(
+						'severity' => Finding::SEVERITY_CRITICAL,
+						'type'     => Finding::TYPE_NEGATIVE_MARGIN,
+					)
+				),
+				$this->finding(
+					array(
+						'severity' => Finding::SEVERITY_CRITICAL,
+						'type'     => Finding::TYPE_NEGATIVE_MARGIN,
+					)
+				),
+				$this->finding(
+					array(
+						'severity' => Finding::SEVERITY_LOW,
+						'type'     => Finding::TYPE_MISSING_COST,
+					)
+				),
 			)
 		);
 
@@ -129,10 +157,30 @@ final class FindingsTest extends TestCase {
 
 	public function test_sum_types_totals_only_the_named_types(): void {
 		$findings = array(
-			$this->finding( array( 'type' => Finding::TYPE_SHIPPING_LOSS, 'impact_minor' => 643 ) ),
-			$this->finding( array( 'type' => Finding::TYPE_HIGH_SHIPPING_LOSS, 'impact_minor' => 1442 ) ),
-			$this->finding( array( 'type' => Finding::TYPE_LOW_MARGIN, 'impact_minor' => 99999 ) ),
-			$this->finding( array( 'type' => Finding::TYPE_MISSING_CARRIER_COST, 'impact_minor' => null ) ),
+			$this->finding(
+				array(
+					'type'         => Finding::TYPE_SHIPPING_LOSS,
+					'impact_minor' => 643,
+				)
+			),
+			$this->finding(
+				array(
+					'type'         => Finding::TYPE_HIGH_SHIPPING_LOSS,
+					'impact_minor' => 1442,
+				)
+			),
+			$this->finding(
+				array(
+					'type'         => Finding::TYPE_LOW_MARGIN,
+					'impact_minor' => 99999,
+				)
+			),
+			$this->finding(
+				array(
+					'type'         => Finding::TYPE_MISSING_CARRIER_COST,
+					'impact_minor' => null,
+				)
+			),
 		);
 
 		$total = Aggregate::sum_types(
@@ -143,25 +191,54 @@ final class FindingsTest extends TestCase {
 	}
 
 	public function test_sum_types_is_null_when_no_named_type_had_an_amount(): void {
-		$findings = array( $this->finding( array( 'type' => Finding::TYPE_MISSING_CARRIER_COST, 'impact_minor' => null ) ) );
+		$findings = array(
+			$this->finding(
+				array(
+					'type'         => Finding::TYPE_MISSING_CARRIER_COST,
+					'impact_minor' => null,
+				)
+			),
+		);
 		$this->assertNull( Aggregate::sum_types( $findings, array( Finding::TYPE_MISSING_CARRIER_COST ) ) );
 	}
 
-	/* ================================================================ *
-	 * Ranking
-	 * ================================================================ */
+	// Ranking.
 
 	public function test_ranks_the_largest_amount_first(): void {
 		$ranked = Finding::rank(
 			array(
-				$this->finding( array( 'reference' => 'small', 'impact_minor' => 100 ) ),
-				$this->finding( array( 'reference' => 'large', 'impact_minor' => 90000 ) ),
-				$this->finding( array( 'reference' => 'medium', 'impact_minor' => 5000 ) ),
+				$this->finding(
+					array(
+						'reference'    => 'small',
+						'impact_minor' => 100,
+					)
+				),
+				$this->finding(
+					array(
+						'reference'    => 'large',
+						'impact_minor' => 90000,
+					)
+				),
+				$this->finding(
+					array(
+						'reference'    => 'medium',
+						'impact_minor' => 5000,
+					)
+				),
 			)
 		);
-		$this->assertSame( array( 'large', 'medium', 'small' ), array_column( array_map( static function ( $f ) {
-			return array( 'reference' => $f->reference );
-		}, $ranked ), 'reference' ) );
+		$this->assertSame(
+			array( 'large', 'medium', 'small' ),
+			array_column(
+				array_map(
+					static function ( $f ) {
+						return array( 'reference' => $f->reference );
+					},
+					$ranked
+				),
+				'reference'
+			)
+		);
 	}
 
 	public function test_every_priced_finding_outranks_every_unpriced_one(): void {
@@ -213,7 +290,13 @@ final class FindingsTest extends TestCase {
 	public function test_falls_back_to_severity_then_confidence_for_unpriced_findings(): void {
 		$ranked = Finding::rank(
 			array(
-				$this->finding( array( 'reference' => 'low', 'impact_minor' => null, 'severity' => Finding::SEVERITY_LOW ) ),
+				$this->finding(
+					array(
+						'reference'    => 'low',
+						'impact_minor' => null,
+						'severity'     => Finding::SEVERITY_LOW,
+					)
+				),
 				$this->finding(
 					array(
 						'reference'    => 'crit-unsure',
@@ -239,8 +322,18 @@ final class FindingsTest extends TestCase {
 
 	public function test_ranking_is_a_total_order(): void {
 		$set = array(
-			$this->finding( array( 'reference' => 'B', 'impact_minor' => 500 ) ),
-			$this->finding( array( 'reference' => 'A', 'impact_minor' => 500 ) ),
+			$this->finding(
+				array(
+					'reference'    => 'B',
+					'impact_minor' => 500,
+				)
+			),
+			$this->finding(
+				array(
+					'reference'    => 'A',
+					'impact_minor' => 500,
+				)
+			),
 		);
 		$this->assertSame( 'A', Finding::rank( $set )[0]->reference );
 		$this->assertSame( 'A', Finding::rank( array_reverse( $set ) )[0]->reference );
@@ -248,16 +341,24 @@ final class FindingsTest extends TestCase {
 
 	public function test_ranking_does_not_mutate_the_input(): void {
 		$set = array(
-			$this->finding( array( 'reference' => 'a', 'impact_minor' => 1 ) ),
-			$this->finding( array( 'reference' => 'b', 'impact_minor' => 2 ) ),
+			$this->finding(
+				array(
+					'reference'    => 'a',
+					'impact_minor' => 1,
+				)
+			),
+			$this->finding(
+				array(
+					'reference'    => 'b',
+					'impact_minor' => 2,
+				)
+			),
 		);
 		Finding::rank( $set );
 		$this->assertSame( 'a', $set[0]->reference );
 	}
 
-	/* ================================================================ *
-	 * The plan gate must NOT exist
-	 * ================================================================ */
+	// The plan gate must NOT exist.
 
 	public function test_the_finding_model_has_no_plan_gate(): void {
 		/*
@@ -273,9 +374,7 @@ final class FindingsTest extends TestCase {
 		}
 	}
 
-	/* ================================================================ *
-	 * Score
-	 * ================================================================ */
+	// Score.
 
 	public function test_margin_score_is_100_for_a_healthy_catalog(): void {
 		$this->assertSame( 100, Score::margin_score( 100, 0, 0, 0 ) );

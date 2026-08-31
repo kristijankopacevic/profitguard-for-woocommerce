@@ -1,0 +1,246 @@
+<?php
+/**
+ * Where a product's cost comes from.
+ *
+ * WooCommerce HAS NO COST FIELD. There is no core meta key for cost of goods,
+ * which is the single fact that shapes this whole plugin: the data the margin
+ * engine needs does not exist in a standard install and has to be supplied.
+ *
+ * Several popular plugins each invented their own meta key. Reading them is a
+ * genuine kindness - a merchant who already has costs in one of those should
+ * not have to re-enter them - but it has to be done carefully:
+ *
+ *  - ProfitGuard's OWN key always wins, so an explicit import is never
+ *    silently overridden by a stale value from another plugin.
+ *  - Foreign keys are READ ONLY. ProfitGuard never writes to another plugin's
+ *    meta. Writing there would corrupt their data and would survive
+ *    ProfitGuard being uninstalled.
+ *  - A foreign value is parsed with the strict decimal parser and rejected if
+ *    it is not a plain number, because we do not know what conventions another
+ *    plugin stores.
+ *
+ * The list is filterable so a merchant or a future add-on can teach it a key
+ * without patching the plugin.
+ *
+ * @package ProfitGuard
+ */
+
+declare(strict_types=1);
+
+namespace ProfitGuard\Woo;
+
+use ProfitGuard\Core\Money;
+use WC_Product;
+
+defined( 'ABSPATH' ) || exit;
+
+/*
+ * Cost lives in POST META, which means reading it is a meta_key lookup.
+ *
+ * WPCS warns that querying by meta_key can be slow, and on an unindexed
+ * arbitrary key it can be. These calls are get_post_meta()/update_post_meta()
+ * for a SINGLE known post id, which WordPress serves from the object cache
+ * after one primed query per post - not a meta_query across the catalog. The
+ * scanner primes that cache by hydrating products in batches.
+ *
+ * Meta is still the right home for the cost: it belongs to the product, it
+ * survives ProfitGuard being removed if the merchant chooses, and it is the
+ * one piece of our data another plugin might reasonably want to read.
+ */
+// phpcs:disable WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+
+/**
+ * Resolves a cost for a product or variation.
+ */
+final class CostProvider {
+
+	/**
+	 * ProfitGuard's own cost meta key, in minor units.
+	 *
+	 * Stored as an integer count of minor units rather than a decimal string,
+	 * so no float ever round-trips through the database.
+	 */
+	public const META_COST_MINOR = '_profitguard_cost_minor';
+
+	/**
+	 * The previous cost, kept so a cost increase can be detected.
+	 *
+	 * Written by the importer when it overwrites an existing cost. Without it
+	 * there is no COST_INCREASE finding, because there is nothing to compare
+	 * the new cost against.
+	 */
+	public const META_PREVIOUS_COST_MINOR = '_profitguard_previous_cost_minor';
+
+	/**
+	 * When the cost was last set, as a Unix timestamp.
+	 */
+	public const META_COST_UPDATED_AT = '_profitguard_cost_updated_at';
+
+	/**
+	 * Where a resolved cost came from.
+	 */
+	public const SOURCE_PROFITGUARD = 'profitguard';
+	public const SOURCE_FOREIGN     = 'foreign_meta';
+	public const SOURCE_NONE        = 'none';
+
+	/**
+	 * Known third-party cost meta keys, in preference order.
+	 *
+	 * @return string[]
+	 */
+	public static function foreign_meta_keys(): array {
+		$keys = array(
+			// WooCommerce Cost of Goods (several forks share this key).
+			'_wc_cog_cost',
+			// Cost of Goods for WooCommerce (WPFactory).
+			'_alg_wc_cog_cost',
+			// A common convention among smaller plugins and custom themes.
+			'_cost_of_goods',
+			'_wc_cost_of_goods',
+			'_product_cost',
+		);
+
+		/**
+		 * Filter the third-party cost meta keys ProfitGuard will read.
+		 *
+		 * Read only: ProfitGuard never writes to any of these.
+		 *
+		 * @since 1.0.0
+		 * @param string[] $keys Meta keys, in preference order.
+		 */
+		$filtered = apply_filters( 'profitguard_cost_meta_keys', $keys );
+
+		return is_array( $filtered ) ? array_values( array_filter( array_map( 'strval', $filtered ) ) ) : $keys;
+	}
+
+	/**
+	 * Resolve the cost for a product or variation.
+	 *
+	 * @param WC_Product $product Product or variation.
+	 * @return array{cost_minor:int|null,source:string,meta_key:string|null}
+	 */
+	public static function get_cost( WC_Product $product ): array {
+		$product_id = $product->get_id();
+
+		// 1. ProfitGuard's own value always wins.
+		$own = get_post_meta( $product_id, self::META_COST_MINOR, true );
+		if ( '' !== $own && null !== $own && is_numeric( $own ) ) {
+			return array(
+				'cost_minor' => (int) $own,
+				'source'     => self::SOURCE_PROFITGUARD,
+				'meta_key'   => self::META_COST_MINOR,
+			);
+		}
+
+		// 2. A known third-party key, read only, parsed strictly.
+		foreach ( self::foreign_meta_keys() as $key ) {
+			$raw = get_post_meta( $product_id, $key, true );
+			if ( '' === $raw || null === $raw ) {
+				continue;
+			}
+			// Strict decimal parsing: these are machine-written decimals. Using
+			// the spreadsheet heuristic here could read "1.000" as a thousand.
+			$minor = Money::parse_decimal_to_minor( is_scalar( $raw ) ? (string) $raw : null );
+			if ( null === $minor || $minor < 0 ) {
+				continue;
+			}
+			return array(
+				'cost_minor' => $minor,
+				'source'     => self::SOURCE_FOREIGN,
+				'meta_key'   => $key,
+			);
+		}
+
+		/**
+		 * Filter a resolved cost, for a future add-on or a bespoke source.
+		 *
+		 * Returning a non-null integer supplies a cost ProfitGuard could not
+		 * find. Returning null leaves it genuinely unknown, which is a valid
+		 * and important answer - it produces a MISSING_COST finding rather
+		 * than a fabricated margin.
+		 *
+		 * @since 1.0.0
+		 * @param int|null   $cost_minor Cost in minor units, or null.
+		 * @param WC_Product $product    The product.
+		 */
+		$filtered = apply_filters( 'profitguard_product_cost_minor', null, $product );
+		if ( null !== $filtered && is_numeric( $filtered ) ) {
+			return array(
+				'cost_minor' => (int) $filtered,
+				'source'     => self::SOURCE_FOREIGN,
+				'meta_key'   => null,
+			);
+		}
+
+		// 3. Genuinely unknown. Never zero.
+		return array(
+			'cost_minor' => null,
+			'source'     => self::SOURCE_NONE,
+			'meta_key'   => null,
+		);
+	}
+
+	/**
+	 * Store a cost, keeping the previous value so an increase can be detected.
+	 *
+	 * @param int $product_id Product or variation id.
+	 * @param int $cost_minor Cost in minor units.
+	 * @return bool True when the value changed.
+	 */
+	public static function set_cost( int $product_id, int $cost_minor ): bool {
+		if ( $cost_minor < 0 ) {
+			return false;
+		}
+
+		$existing = get_post_meta( $product_id, self::META_COST_MINOR, true );
+		$previous = ( '' !== $existing && is_numeric( $existing ) ) ? (int) $existing : null;
+
+		if ( null !== $previous && $previous === $cost_minor ) {
+			return false;
+		}
+
+		if ( null !== $previous ) {
+			update_post_meta( $product_id, self::META_PREVIOUS_COST_MINOR, $previous );
+		}
+
+		update_post_meta( $product_id, self::META_COST_MINOR, $cost_minor );
+		update_post_meta( $product_id, self::META_COST_UPDATED_AT, time() );
+
+		/**
+		 * Fires after ProfitGuard stores a product cost.
+		 *
+		 * @since 1.0.0
+		 * @param int      $product_id Product or variation id.
+		 * @param int      $cost_minor New cost in minor units.
+		 * @param int|null $previous   Previous cost in minor units, or null.
+		 */
+		do_action( 'profitguard_cost_updated', $product_id, $cost_minor, $previous );
+
+		return true;
+	}
+
+	/**
+	 * The previous cost, when one was recorded.
+	 *
+	 * @param int $product_id Product or variation id.
+	 * @return int|null
+	 */
+	public static function get_previous_cost( int $product_id ): ?int {
+		$value = get_post_meta( $product_id, self::META_PREVIOUS_COST_MINOR, true );
+		return ( '' !== $value && is_numeric( $value ) ) ? (int) $value : null;
+	}
+
+	/**
+	 * Remove every ProfitGuard cost meta key. Used only by uninstall.
+	 */
+	public static function delete_all_cost_meta(): void {
+		global $wpdb;
+
+		foreach ( array( self::META_COST_MINOR, self::META_PREVIOUS_COST_MINOR, self::META_COST_UPDATED_AT ) as $key ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Bulk cleanup on uninstall; delete_post_meta_by_key is available but this keeps all three keys consistent.
+			$wpdb->delete( $wpdb->postmeta, array( 'meta_key' => $key ) );
+		}
+	}
+}
+
+// phpcs:enable WordPress.DB.SlowDBQuery.slow_db_query_meta_key

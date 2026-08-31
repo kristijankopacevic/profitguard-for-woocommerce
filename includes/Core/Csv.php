@@ -53,7 +53,16 @@ final class Csv {
 	 * @return string The detected delimiter.
 	 */
 	public static function detect_delimiter( string $sample ): string {
-		$lines = preg_split( '/\r\n|\r|\n/', $sample ) ?: array();
+		// Not `?: array()`: a short ternary hides the fact that preg_split
+		// returns false on failure, and WPCS forbids it for that reason.
+		$split = preg_split(
+			'/
+|
+|
+/',
+			$sample
+		);
+		$lines = is_array( $split ) ? $split : array();
 		$lines = array_values(
 			array_filter(
 				$lines,
@@ -74,7 +83,7 @@ final class Csv {
 		foreach ( self::DELIMITERS as $delimiter ) {
 			$counts = array();
 			foreach ( $lines as $line ) {
-				$parsed = str_getcsv( (string) $line, $delimiter );
+				$parsed   = str_getcsv( (string) $line, $delimiter );
 				$counts[] = count( $parsed );
 			}
 
@@ -85,8 +94,8 @@ final class Csv {
 
 			// Score: how many lines agree on the modal column count, weighted
 			// by how many columns that is.
-			$modal      = self::modal( $counts );
-			$agreement  = count(
+			$modal     = self::modal( $counts );
+			$agreement = count(
 				array_filter(
 					$counts,
 					static function ( $n ) use ( $modal ) {
@@ -94,13 +103,13 @@ final class Csv {
 					}
 				)
 			) / count( $counts );
-			$score      = $agreement * $modal;
+			$score     = $agreement * $modal;
 
 			if ( $score > $best_score ) {
 				$best_score = $score;
 				$best       = $delimiter;
 			}
-		}
+		}//end foreach
 
 		return $best;
 	}
@@ -154,7 +163,7 @@ final class Csv {
 		$rows      = array();
 		$truncated = false;
 
-		$handle = fopen( 'php://memory', 'r+' );
+		$handle = fopen( 'php://memory', 'r+' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- php://memory stream, not a file on disk. WP_Filesystem has no equivalent and nothing here touches the filesystem.
 		if ( false === $handle ) {
 			return array(
 				'delimiter' => $delimiter,
@@ -162,7 +171,7 @@ final class Csv {
 				'truncated' => false,
 			);
 		}
-		fwrite( $handle, $text );
+		fwrite( $handle, $text ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- php://memory stream, not a file on disk. WP_Filesystem has no equivalent and nothing here touches the filesystem.
 		rewind( $handle );
 
 		while ( true ) {
@@ -185,7 +194,7 @@ final class Csv {
 				$row
 			);
 		}
-		fclose( $handle );
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- php://memory stream, not a file on disk. WP_Filesystem has no equivalent and nothing here touches the filesystem.
 
 		return array(
 			'delimiter' => $delimiter,
@@ -194,9 +203,7 @@ final class Csv {
 		);
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Column detection
-	 * --------------------------------------------------------------- */
+	// Column detection.
 
 	/**
 	 * Header synonyms for each concept ProfitGuard understands.
@@ -209,62 +216,192 @@ final class Csv {
 	 */
 	private const HEADER_SYNONYMS = array(
 		'sku'         => array(
-			'sku', 'item number', 'itemnumber', 'article', 'article number', 'articlenumber',
-			'product code', 'productcode', 'code', 'reference', 'ref', 'part number',
-			'artikelnummer', 'artikel', 'referencia', 'codice', 'riferimento',
-			'sifra', 'sifra artikla', 'kod', 'indeks', 'symbol',
+			'sku',
+			'item number',
+			'itemnumber',
+			'article',
+			'article number',
+			'articlenumber',
+			'product code',
+			'productcode',
+			'code',
+			'reference',
+			'ref',
+			'part number',
+			'artikelnummer',
+			'artikel',
+			'referencia',
+			'codice',
+			'riferimento',
+			'sifra',
+			'sifra artikla',
+			'kod',
+			'indeks',
+			'symbol',
 		),
 		'cost'        => array(
-			'cost', 'cost price', 'costprice', 'unit cost', 'unitcost', 'cogs',
-			'purchase price', 'purchaseprice', 'buy price', 'buying price', 'net cost',
-			'wholesale price', 'supplier price', 'ek', 'einkaufspreis', 'kosten',
-			'prix achat', 'prix d achat', 'precio costo', 'costo', 'prezzo acquisto',
-			'inkoopprijs', 'nabavna cijena', 'nabavna', 'cena zakupu',
+			'cost',
+			'cost price',
+			'costprice',
+			'unit cost',
+			'unitcost',
+			'cogs',
+			'purchase price',
+			'purchaseprice',
+			'buy price',
+			'buying price',
+			'net cost',
+			'wholesale price',
+			'supplier price',
+			'ek',
+			'einkaufspreis',
+			'kosten',
+			'prix achat',
+			'prix d achat',
+			'precio costo',
+			'costo',
+			'prezzo acquisto',
+			'inkoopprijs',
+			'nabavna cijena',
+			'nabavna',
+			'cena zakupu',
 		),
 		'currency'    => array(
-			'currency', 'curr', 'ccy', 'waehrung', 'wahrung', 'devise', 'moneda',
-			'valuta', 'valuta oznaka',
+			'currency',
+			'curr',
+			'ccy',
+			'waehrung',
+			'wahrung',
+			'devise',
+			'moneda',
+			'valuta',
+			'valuta oznaka',
 		),
 		'product_id'  => array(
-			'product id', 'productid', 'id', 'post id', 'postid', 'wc id', 'variation id',
+			'product id',
+			'productid',
+			'id',
+			'post id',
+			'postid',
+			'wc id',
+			'variation id',
 			'variationid',
 		),
 		'name'        => array(
-			'name', 'product', 'product name', 'productname', 'title', 'description',
-			'bezeichnung', 'artikelbezeichnung', 'nom', 'nombre', 'nome', 'naziv', 'nazwa',
+			'name',
+			'product',
+			'product name',
+			'productname',
+			'title',
+			'description',
+			'bezeichnung',
+			'artikelbezeichnung',
+			'nom',
+			'nombre',
+			'nome',
+			'naziv',
+			'nazwa',
 		),
 		'order'       => array(
-			'order', 'order number', 'ordernumber', 'order id', 'orderid', 'order no',
-			'orderno', 'reference', 'bestellnummer', 'commande', 'pedido', 'ordine',
-			'broj narudzbe', 'narudzba', 'zamowienie',
+			'order',
+			'order number',
+			'ordernumber',
+			'order id',
+			'orderid',
+			'order no',
+			'orderno',
+			'reference',
+			'bestellnummer',
+			'commande',
+			'pedido',
+			'ordine',
+			'broj narudzbe',
+			'narudzba',
+			'zamowienie',
 		),
 		'tracking'    => array(
-			'tracking', 'tracking number', 'trackingnumber', 'tracking no', 'trackingno',
-			'awb', 'consignment', 'consignment number', 'waybill', 'parcel number',
-			'sendungsnummer', 'suivi', 'seguimiento', 'tracciatura', 'broj posiljke',
+			'tracking',
+			'tracking number',
+			'trackingnumber',
+			'tracking no',
+			'trackingno',
+			'awb',
+			'consignment',
+			'consignment number',
+			'waybill',
+			'parcel number',
+			'sendungsnummer',
+			'suivi',
+			'seguimiento',
+			'tracciatura',
+			'broj posiljke',
 		),
 		'carrier'     => array(
-			'carrier', 'courier', 'shipping carrier', 'transporter', 'transport',
-			'spediteur', 'transporteur', 'transportista', 'corriere', 'prijevoznik',
+			'carrier',
+			'courier',
+			'shipping carrier',
+			'transporter',
+			'transport',
+			'spediteur',
+			'transporteur',
+			'transportista',
+			'corriere',
+			'prijevoznik',
 			'przewoznik',
 		),
 		'actual_cost' => array(
-			'actual shipping cost', 'shipping cost', 'shippingcost', 'carrier cost',
-			'carriercost', 'freight', 'freight cost', 'actual cost', 'net charge',
-			'total charge', 'amount', 'versandkosten', 'frachtkosten', 'cout transport',
-			'coste envio', 'costo spedizione', 'trosak dostave', 'koszt wysylki',
+			'actual shipping cost',
+			'shipping cost',
+			'shippingcost',
+			'carrier cost',
+			'carriercost',
+			'freight',
+			'freight cost',
+			'actual cost',
+			'net charge',
+			'total charge',
+			'amount',
+			'versandkosten',
+			'frachtkosten',
+			'cout transport',
+			'coste envio',
+			'costo spedizione',
+			'trosak dostave',
+			'koszt wysylki',
 		),
 		'surcharge'   => array(
-			'surcharge', 'surcharges', 'fuel surcharge', 'accessorial', 'extra',
-			'zuschlag', 'supplement', 'recargo', 'supplemento', 'doplata',
+			'surcharge',
+			'surcharges',
+			'fuel surcharge',
+			'accessorial',
+			'extra',
+			'zuschlag',
+			'supplement',
+			'recargo',
+			'supplemento',
+			'doplata',
 		),
 		'adjustment'  => array(
-			'adjustment', 'adjustments', 'correction', 'anpassung', 'ajustement',
-			'ajuste', 'rettifica', 'ispravak', 'korekta',
+			'adjustment',
+			'adjustments',
+			'correction',
+			'anpassung',
+			'ajustement',
+			'ajuste',
+			'rettifica',
+			'ispravak',
+			'korekta',
 		),
 		'date'        => array(
-			'date', 'shipping date', 'shipdate', 'ship date', 'invoice date', 'datum',
-			'fecha', 'data', 'datum otpreme',
+			'date',
+			'shipping date',
+			'shipdate',
+			'ship date',
+			'invoice date',
+			'datum',
+			'fecha',
+			'data',
+			'datum otpreme',
 		),
 	);
 
@@ -282,7 +419,7 @@ final class Csv {
 		$header = self::strip_bom( $header );
 		$header = mb_strtolower( trim( $header ), 'UTF-8' );
 
-		$folds = array(
+		$folds  = array(
 			'ß' => 'ss',
 			'đ' => 'd',
 			'ø' => 'o',
@@ -384,14 +521,12 @@ final class Csv {
 					}
 				}
 			}
-		}
+		}//end foreach
 
 		return $mapping;
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Writing
-	 * --------------------------------------------------------------- */
+	// Writing.
 
 	/**
 	 * Make a cell safe to write into a CSV a spreadsheet will open.
@@ -441,18 +576,19 @@ final class Csv {
 	 * strings is what produces broken files the first time a product name
 	 * contains a comma, so fputcsv does the quoting.
 	 *
-	 * @param string[]              $headers Header row.
-	 * @param array<int, scalar[]>  $rows    Data rows.
+	 * @param string[]             $headers Header row.
+	 * @param array<int, scalar[]> $rows    Data rows.
 	 * @return string CSV document.
 	 */
 	public static function build( array $headers, array $rows ): string {
-		$handle = fopen( 'php://memory', 'r+' );
+		$handle = fopen( 'php://memory', 'r+' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- php://memory stream, not a file on disk. WP_Filesystem has no equivalent and nothing here touches the filesystem.
 		if ( false === $handle ) {
 			return '';
 		}
 
 		// A BOM so Excel opens UTF-8 correctly. Without it, accented product
 		// names are mojibake on a default Windows install.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- php://memory stream, not a file on disk.
 		fwrite( $handle, "\xEF\xBB\xBF" );
 
 		fputcsv( $handle, array_map( array( self::class, 'escape_cell' ), $headers ) );
@@ -462,7 +598,7 @@ final class Csv {
 
 		rewind( $handle );
 		$csv = stream_get_contents( $handle );
-		fclose( $handle );
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- php://memory stream, not a file on disk. WP_Filesystem has no equivalent and nothing here touches the filesystem.
 
 		return false === $csv ? '' : $csv;
 	}

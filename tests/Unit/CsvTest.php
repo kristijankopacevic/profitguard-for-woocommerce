@@ -18,9 +18,7 @@ use ProfitGuard\Core\Csv;
 
 final class CsvTest extends TestCase {
 
-	/* ================================================================ *
-	 * Delimiter detection
-	 * ================================================================ */
+	// Delimiter detection.
 
 	public function test_detects_a_comma_delimited_file(): void {
 		$this->assertSame( ',', Csv::detect_delimiter( "SKU,Cost\nA-1,10.00\nA-2,20.00" ) );
@@ -45,9 +43,7 @@ final class CsvTest extends TestCase {
 		$this->assertSame( ',', Csv::detect_delimiter( "\n\n" ) );
 	}
 
-	/* ================================================================ *
-	 * Parsing
-	 * ================================================================ */
+	// Parsing.
 
 	public function test_parses_rows(): void {
 		$result = Csv::parse( "SKU,Cost\nA-1,10.00\nA-2,20.00" );
@@ -94,9 +90,7 @@ final class CsvTest extends TestCase {
 		$this->assertFalse( $result['truncated'] );
 	}
 
-	/* ================================================================ *
-	 * Header normalisation
-	 * ================================================================ */
+	// Header normalisation.
 
 	public function test_normalises_case_and_punctuation(): void {
 		$this->assertSame( 'cost price net', Csv::normalise_header( 'Cost price (net)' ) );
@@ -115,9 +109,7 @@ final class CsvTest extends TestCase {
 		$this->assertSame( 'einkaufspreis', Csv::normalise_header( 'Einkaufspreis' ) );
 	}
 
-	/* ================================================================ *
-	 * Column suggestion
-	 * ================================================================ */
+	// Column suggestion.
 
 	public function test_suggests_the_obvious_columns(): void {
 		$mapping = Csv::suggest_columns( array( 'SKU', 'Cost', 'Currency' ) );
@@ -161,9 +153,7 @@ final class CsvTest extends TestCase {
 		$this->assertArrayNotHasKey( 'cost', $mapping );
 	}
 
-	/* ================================================================ *
-	 * Formula injection - the security-relevant part
-	 * ================================================================ */
+	// Formula injection - the security-relevant part.
 
 	public function test_escapes_every_formula_trigger(): void {
 		/*
@@ -205,9 +195,7 @@ final class CsvTest extends TestCase {
 		$this->assertSame( "'-6.43", Csv::escape_cell( '-6.43' ) );
 	}
 
-	/* ================================================================ *
-	 * Writing
-	 * ================================================================ */
+	// Writing.
 
 	public function test_builds_a_csv_with_a_bom_and_quoting(): void {
 		$csv = Csv::build( array( 'SKU', 'Name' ), array( array( 'A-1', 'Charger, wireless' ) ) );

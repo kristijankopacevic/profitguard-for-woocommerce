@@ -42,28 +42,22 @@ defined( 'ABSPATH' ) || defined( 'PROFITGUARD_TESTING' ) || exit;
  */
 final class Finding {
 
-	/* --------------------------------------------------------------- *
-	 * Modules
-	 * --------------------------------------------------------------- */
+	// Modules.
 
 	public const MODULE_MARGIN   = 'MARGIN';
 	public const MODULE_SHIPPING = 'SHIPPING';
 
-	/* --------------------------------------------------------------- *
-	 * Margin finding types
-	 * --------------------------------------------------------------- */
+	// Margin finding types.
 
-	public const TYPE_HEALTHY                 = 'HEALTHY';
-	public const TYPE_LOW_MARGIN              = 'LOW_MARGIN';
-	public const TYPE_CRITICAL_MARGIN         = 'CRITICAL_MARGIN';
-	public const TYPE_NEGATIVE_MARGIN         = 'NEGATIVE_MARGIN';
-	public const TYPE_MISSING_COST            = 'MISSING_COST';
-	public const TYPE_SALE_PRICE_MARGIN_RISK  = 'SALE_PRICE_MARGIN_RISK';
-	public const TYPE_COST_INCREASE           = 'COST_INCREASE';
+	public const TYPE_HEALTHY                = 'HEALTHY';
+	public const TYPE_LOW_MARGIN             = 'LOW_MARGIN';
+	public const TYPE_CRITICAL_MARGIN        = 'CRITICAL_MARGIN';
+	public const TYPE_NEGATIVE_MARGIN        = 'NEGATIVE_MARGIN';
+	public const TYPE_MISSING_COST           = 'MISSING_COST';
+	public const TYPE_SALE_PRICE_MARGIN_RISK = 'SALE_PRICE_MARGIN_RISK';
+	public const TYPE_COST_INCREASE          = 'COST_INCREASE';
 
-	/* --------------------------------------------------------------- *
-	 * Shipping finding types
-	 * --------------------------------------------------------------- */
+	// Shipping finding types.
 
 	public const TYPE_SHIPPING_PROFIT                = 'SHIPPING_PROFIT';
 	public const TYPE_SHIPPING_LOSS                  = 'SHIPPING_LOSS';
@@ -72,9 +66,7 @@ final class Finding {
 	public const TYPE_POSSIBLE_DUPLICATE_CARRIER_ROW = 'POSSIBLE_DUPLICATE_CARRIER_ROW';
 	public const TYPE_UNMATCHED_CARRIER_ROW          = 'UNMATCHED_CARRIER_ROW';
 
-	/* --------------------------------------------------------------- *
-	 * Severity
-	 * --------------------------------------------------------------- */
+	// Severity.
 
 	public const SEVERITY_INFO     = 'INFO';
 	public const SEVERITY_LOW      = 'LOW';
@@ -82,7 +74,8 @@ final class Finding {
 	public const SEVERITY_HIGH     = 'HIGH';
 	public const SEVERITY_CRITICAL = 'CRITICAL';
 
-	/* --------------------------------------------------------------- *
+	/*
+	--------------------------------------------------------------- *
 	 * Financial classification
 	 *
 	 * What KIND of claim the money figure is making. A merchant reads these
@@ -90,7 +83,7 @@ final class Finding {
 	 * already have, an evidenced difference is two documents disagreeing, and
 	 * an estimate is a projection. Presenting them identically teaches a
 	 * merchant to distrust all three.
-	 * --------------------------------------------------------------- */
+	 */
 
 	/** Arithmetic on data the store already holds. Exact. */
 	public const FINANCIAL_CONFIRMED_CALCULATION = 'CONFIRMED_CALCULATION';
@@ -101,14 +94,12 @@ final class Finding {
 	/** No figure can be stated, and that is the finding. */
 	public const FINANCIAL_MISSING_DATA = 'MISSING_DATA';
 
-	/* --------------------------------------------------------------- *
-	 * Subject kinds
-	 * --------------------------------------------------------------- */
+	// Subject kinds.
 
-	public const SUBJECT_PRODUCT     = 'product';
-	public const SUBJECT_VARIATION   = 'variation';
-	public const SUBJECT_ORDER       = 'order';
-	public const SUBJECT_IMPORT_ROW  = 'import_row';
+	public const SUBJECT_PRODUCT    = 'product';
+	public const SUBJECT_VARIATION  = 'variation';
+	public const SUBJECT_ORDER      = 'order';
+	public const SUBJECT_IMPORT_ROW = 'import_row';
 
 	/**
 	 * Module: MODULE_MARGIN or MODULE_SHIPPING.

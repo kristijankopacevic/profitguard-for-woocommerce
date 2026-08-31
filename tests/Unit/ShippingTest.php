@@ -95,16 +95,26 @@ final class ShippingTest extends TestCase {
 		$this->assertNull( $result['recovery_bp'] );
 	}
 
-	/* ================================================================ *
-	 * Summary
-	 * ================================================================ */
+	// Summary.
 
 	public function test_counts_orders_seen_separately_from_orders_it_could_price(): void {
 		$summary = Shipping::summarise(
 			array(
-				array( 'shipping_charged_minor' => 799, 'carrier_cost_minor' => 1442, 'order_total_minor' => 6500 ),
-				array( 'shipping_charged_minor' => 799, 'carrier_cost_minor' => null, 'order_total_minor' => 6500 ),
-				array( 'shipping_charged_minor' => 799, 'carrier_cost_minor' => null, 'order_total_minor' => 6500 ),
+				array(
+					'shipping_charged_minor' => 799,
+					'carrier_cost_minor'     => 1442,
+					'order_total_minor'      => 6500,
+				),
+				array(
+					'shipping_charged_minor' => 799,
+					'carrier_cost_minor'     => null,
+					'order_total_minor'      => 6500,
+				),
+				array(
+					'shipping_charged_minor' => 799,
+					'carrier_cost_minor'     => null,
+					'order_total_minor'      => 6500,
+				),
 			)
 		);
 
@@ -116,8 +126,16 @@ final class ShippingTest extends TestCase {
 	public function test_sums_losses_for_out_of_pocket_but_nets_for_the_true_position(): void {
 		$summary = Shipping::summarise(
 			array(
-				array( 'shipping_charged_minor' => 0, 'carrier_cost_minor' => 1000, 'order_total_minor' => 5000 ),
-				array( 'shipping_charged_minor' => 2000, 'carrier_cost_minor' => 1000, 'order_total_minor' => 5000 ),
+				array(
+					'shipping_charged_minor' => 0,
+					'carrier_cost_minor'     => 1000,
+					'order_total_minor'      => 5000,
+				),
+				array(
+					'shipping_charged_minor' => 2000,
+					'carrier_cost_minor'     => 1000,
+					'order_total_minor'      => 5000,
+				),
 			)
 		);
 
@@ -127,7 +145,13 @@ final class ShippingTest extends TestCase {
 
 	public function test_totals_are_null_not_zero_when_nothing_could_be_priced(): void {
 		$summary = Shipping::summarise(
-			array( array( 'shipping_charged_minor' => 799, 'carrier_cost_minor' => null, 'order_total_minor' => 6500 ) )
+			array(
+				array(
+					'shipping_charged_minor' => 799,
+					'carrier_cost_minor'     => null,
+					'order_total_minor'      => 6500,
+				),
+			)
 		);
 
 		$this->assertSame( 0, $summary['orders_assessed'] );
@@ -143,8 +167,16 @@ final class ShippingTest extends TestCase {
 		// score, on exactly the stores with the least evidence.
 		$summary = Shipping::summarise(
 			array(
-				array( 'shipping_charged_minor' => 800, 'carrier_cost_minor' => 1000, 'order_total_minor' => 5000 ),
-				array( 'shipping_charged_minor' => 9999, 'carrier_cost_minor' => null, 'order_total_minor' => 5000 ),
+				array(
+					'shipping_charged_minor' => 800,
+					'carrier_cost_minor'     => 1000,
+					'order_total_minor'      => 5000,
+				),
+				array(
+					'shipping_charged_minor' => 9999,
+					'carrier_cost_minor'     => null,
+					'order_total_minor'      => 5000,
+				),
 			)
 		);
 
@@ -152,16 +184,26 @@ final class ShippingTest extends TestCase {
 		$this->assertSame( 1000, $summary['carrier_cost_minor'] );
 	}
 
-	/* ================================================================ *
-	 * Duplicates
-	 * ================================================================ */
+	// Duplicates.
 
 	public function test_finds_one_tracking_number_billed_twice(): void {
 		$found = Shipping::detect_duplicates(
 			array(
-				array( 'tracking_number' => 'JD001', 'carrier_cost_minor' => 1442, 'row_index' => 1 ),
-				array( 'tracking_number' => 'JD001', 'carrier_cost_minor' => 1442, 'row_index' => 2 ),
-				array( 'tracking_number' => 'JD002', 'carrier_cost_minor' => 900, 'row_index' => 3 ),
+				array(
+					'tracking_number'    => 'JD001',
+					'carrier_cost_minor' => 1442,
+					'row_index'          => 1,
+				),
+				array(
+					'tracking_number'    => 'JD001',
+					'carrier_cost_minor' => 1442,
+					'row_index'          => 2,
+				),
+				array(
+					'tracking_number'    => 'JD002',
+					'carrier_cost_minor' => 900,
+					'row_index'          => 3,
+				),
 			)
 		);
 
@@ -175,8 +217,16 @@ final class ShippingTest extends TestCase {
 	public function test_matches_tracking_numbers_regardless_of_case_and_padding(): void {
 		$found = Shipping::detect_duplicates(
 			array(
-				array( 'tracking_number' => ' jd001 ', 'carrier_cost_minor' => 100, 'row_index' => 1 ),
-				array( 'tracking_number' => 'JD001', 'carrier_cost_minor' => 100, 'row_index' => 2 ),
+				array(
+					'tracking_number'    => ' jd001 ',
+					'carrier_cost_minor' => 100,
+					'row_index'          => 1,
+				),
+				array(
+					'tracking_number'    => 'JD001',
+					'carrier_cost_minor' => 100,
+					'row_index'          => 2,
+				),
 			)
 		);
 		$this->assertCount( 1, $found );
@@ -187,9 +237,21 @@ final class ShippingTest extends TestCase {
 		// duplicate - the classic bug in this kind of detector.
 		$found = Shipping::detect_duplicates(
 			array(
-				array( 'tracking_number' => null, 'carrier_cost_minor' => 100, 'row_index' => 1 ),
-				array( 'tracking_number' => '', 'carrier_cost_minor' => 100, 'row_index' => 2 ),
-				array( 'tracking_number' => '   ', 'carrier_cost_minor' => 100, 'row_index' => 3 ),
+				array(
+					'tracking_number'    => null,
+					'carrier_cost_minor' => 100,
+					'row_index'          => 1,
+				),
+				array(
+					'tracking_number'    => '',
+					'carrier_cost_minor' => 100,
+					'row_index'          => 2,
+				),
+				array(
+					'tracking_number'    => '   ',
+					'carrier_cost_minor' => 100,
+					'row_index'          => 3,
+				),
 			)
 		);
 		$this->assertCount( 0, $found );
@@ -198,8 +260,16 @@ final class ShippingTest extends TestCase {
 	public function test_reports_a_duplicate_without_an_amount_when_the_copies_are_unpriced(): void {
 		$found = Shipping::detect_duplicates(
 			array(
-				array( 'tracking_number' => 'X1', 'carrier_cost_minor' => null, 'row_index' => 1 ),
-				array( 'tracking_number' => 'X1', 'carrier_cost_minor' => null, 'row_index' => 2 ),
+				array(
+					'tracking_number'    => 'X1',
+					'carrier_cost_minor' => null,
+					'row_index'          => 1,
+				),
+				array(
+					'tracking_number'    => 'X1',
+					'carrier_cost_minor' => null,
+					'row_index'          => 2,
+				),
 			)
 		);
 		$this->assertCount( 1, $found );
@@ -208,25 +278,28 @@ final class ShippingTest extends TestCase {
 
 	public function test_duplicate_detection_is_deterministic(): void {
 		$rows = array(
-			array( 'tracking_number' => 'B2', 'carrier_cost_minor' => 100, 'row_index' => 1 ),
-			array( 'tracking_number' => 'A1', 'carrier_cost_minor' => 100, 'row_index' => 2 ),
-			array( 'tracking_number' => 'B2', 'carrier_cost_minor' => 100, 'row_index' => 3 ),
-			array( 'tracking_number' => 'A1', 'carrier_cost_minor' => 100, 'row_index' => 4 ),
+			array(
+				'tracking_number'    => 'B2',
+				'carrier_cost_minor' => 100,
+				'row_index'          => 1,
+			),
+			array(
+				'tracking_number'    => 'A1',
+				'carrier_cost_minor' => 100,
+				'row_index'          => 2,
+			),
+			array(
+				'tracking_number'    => 'B2',
+				'carrier_cost_minor' => 100,
+				'row_index'          => 3,
+			),
+			array(
+				'tracking_number'    => 'A1',
+				'carrier_cost_minor' => 100,
+				'row_index'          => 4,
+			),
 		);
-		$this->assertSame(
-			wp_json_encode_stub( Shipping::detect_duplicates( $rows ) ),
-			wp_json_encode_stub( Shipping::detect_duplicates( $rows ) )
-		);
+		$this->assertSame( Shipping::detect_duplicates( $rows ), Shipping::detect_duplicates( $rows ) );
 		$this->assertSame( 'A1', Shipping::detect_duplicates( $rows )[0]['tracking_number'] );
 	}
-}
-
-/**
- * Local JSON helper so the test file has no WordPress dependency.
- *
- * @param mixed $value Value.
- * @return string
- */
-function wp_json_encode_stub( $value ): string {
-	return (string) json_encode( $value );
 }

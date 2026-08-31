@@ -1,0 +1,107 @@
+<?xml version="1.0"?>
+<ruleset name="ProfitGuard for WooCommerce">
+	<description>WordPress Coding Standards for ProfitGuard.</description>
+
+	<file>.</file>
+
+	<exclude-pattern>/vendor/*</exclude-pattern>
+	<exclude-pattern>/node_modules/*</exclude-pattern>
+	<exclude-pattern>/build/*</exclude-pattern>
+	<exclude-pattern>/dist/*</exclude-pattern>
+
+	<arg name="extensions" value="php"/>
+	<arg name="colors"/>
+	<arg value="ps"/>
+	<arg name="parallel" value="8"/>
+
+	<!--
+		The full WordPress standard: coding style, escaping, sanitisation,
+		database safety and i18n. Not WordPress-Core alone - the Security and
+		Extra sniffs are the ones that actually catch bugs.
+	-->
+	<rule ref="WordPress">
+		<!--
+			WordPress-Docs requires a @package tag and full docblocks, which the
+			codebase has. What it also wants is a file comment on every file
+			echoing the class comment; that is enforced and satisfied.
+		-->
+
+		<!--
+			Short array syntax is forbidden by WPCS and the codebase complies
+			(array() throughout), so nothing is excluded here.
+		-->
+	</rule>
+
+	<!--
+		The pure core (includes/Core, includes/Analysis, includes/Import/Mapper)
+		is deliberately WordPress-free so it can be unit tested without
+		WordPress. WPCS's i18n sniff wants every user-facing string wrapped in
+		__(), but those classes must not call WordPress functions at all - they
+		return machine constants and the admin layer translates them. Excluding
+		the sniff for those paths is the honest resolution; the alternative
+		would be to break the property that makes them testable.
+	-->
+	<rule ref="WordPress.WP.I18n">
+		<exclude-pattern>/includes/Core/*</exclude-pattern>
+		<exclude-pattern>/includes/Analysis/*</exclude-pattern>
+		<exclude-pattern>/includes/Import/Mapper.php</exclude-pattern>
+		<exclude-pattern>/tests/*</exclude-pattern>
+	</rule>
+
+	<!--
+		Class files are PSR-4, not WordPress's class-foo.php convention, because
+		the plugin autoloads by namespace. The file NAMES are therefore
+		deliberately non-WordPress; everything inside them follows the standard.
+	-->
+	<rule ref="WordPress.Files.FileName">
+		<exclude-pattern>/tests/*</exclude-pattern>
+		<exclude-pattern>/includes/*</exclude-pattern>
+	</rule>
+
+	<!--
+		Tests follow PHPUnit's conventions, not WordPress's documentation ones.
+		A test method's name IS its documentation - `test_a_leading_zero_settles
+		_the_thousands_ambiguity` says more than any docblock would - and
+		requiring a @return void on each of 191 of them adds noise, not safety.
+		The production code is held to the full standard.
+	-->
+	<rule ref="Squiz.Commenting">
+		<exclude-pattern>/tests/*</exclude-pattern>
+	</rule>
+	<rule ref="Generic.Commenting">
+		<exclude-pattern>/tests/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.NamingConventions.ValidVariableName">
+		<exclude-pattern>/tests/*</exclude-pattern>
+	</rule>
+	<rule ref="Universal.Files.SeparateFunctionsFromOO">
+		<exclude-pattern>/tests/*</exclude-pattern>
+	</rule>
+
+	<!-- Text domain must match the plugin slug everywhere. -->
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="profitguard-for-woocommerce"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- Prefix every global symbol, so nothing can collide with another plugin. -->
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="profitguard"/>
+				<element value="ProfitGuard"/>
+				<element value="PROFITGUARD"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- The minimum WordPress this plugin supports. -->
+	<config name="minimum_wp_version" value="6.4"/>
+
+	<!-- PHP compatibility across everything WordPress itself supports. -->
+	<config name="testVersion" value="7.4-"/>
+	<rule ref="PHPCompatibilityWP"/>
+</ruleset>

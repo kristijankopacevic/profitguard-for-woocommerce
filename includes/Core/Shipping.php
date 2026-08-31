@@ -161,13 +161,13 @@ final class Shipping {
 	 * }
 	 */
 	public static function summarise( array $orders ): array {
-		$seen           = count( $orders );
-		$assessed       = 0;
-		$at_loss        = 0;
-		$total_loss     = null;
-		$net            = null;
-		$total_charged  = null;
-		$total_carrier  = null;
+		$seen          = count( $orders );
+		$assessed      = 0;
+		$at_loss       = 0;
+		$total_loss    = null;
+		$net           = null;
+		$total_charged = null;
+		$total_carrier = null;
 
 		foreach ( $orders as $order ) {
 			$charged = $order['shipping_charged_minor'] ?? null;
@@ -193,7 +193,7 @@ final class Shipping {
 				++$at_loss;
 				$total_loss = null === $total_loss ? $loss : $total_loss + $loss;
 			}
-		}
+		}//end foreach
 
 		return array(
 			'orders_seen'            => $seen,
@@ -206,9 +206,7 @@ final class Shipping {
 		);
 	}
 
-	/* --------------------------------------------------------------- *
-	 * Duplicate detection
-	 * --------------------------------------------------------------- */
+	// Duplicate detection.
 
 	/**
 	 * Find carrier rows that look like the same shipment billed twice.
@@ -272,7 +270,7 @@ final class Shipping {
 				),
 				'duplicate_amount_minor' => $duplicate_amount,
 			);
-		}
+		}//end foreach
 
 		// Deterministic order so a report generated twice is identical.
 		usort(
