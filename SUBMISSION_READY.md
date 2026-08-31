@@ -8,8 +8,23 @@ built and verified.
 
 ## What you have to do
 
-**1. Sign in to WordPress.org.**
-<https://login.wordpress.org/>
+**1. Create your WordPress.org account.**
+<https://login.wordpress.org/register>
+
+You do not have one yet — I checked, and `profiles.wordpress.org/kristijankopacevic`
+returns 404. **Register with the username `kristijankopacevic`**, which is
+currently unclaimed. `readme.txt` already names it as the contributor, so taking
+that exact username makes the plugin page correct with no further edit.
+
+If you take a different username, change line 2 of `readme.txt` to match before
+you upload:
+
+```
+Contributors: kristijankopacevic
+```
+
+Registration needs a working email address and you must click the confirmation
+link, which is why this step is yours and not mine.
 
 **2. Open the submission page and upload the ZIP.**
 <https://wordpress.org/plugins/developers/add/>
@@ -22,25 +37,6 @@ profitguard-for-woocommerce/dist/profitguard-for-woocommerce.zip
 
 That is the whole list. The form reads the name, version, description and
 requirements from the ZIP, so there is nothing else to fill in.
-
----
-
-## One thing to check while you are logged in
-
-`readme.txt` line 2 says:
-
-```
-Contributors: kristijankopacevic
-```
-
-That is a guess, taken from your GitHub handle, because a WordPress.org username
-is account information I have no way to confirm. **If your WordPress.org username
-is different, change that line before you upload** — it is the name shown on the
-plugin page.
-
-It does not affect ownership: whoever submits the plugin becomes its committer
-regardless of what this line says. A wrong value just renders a dead profile
-link.
 
 ---
 
