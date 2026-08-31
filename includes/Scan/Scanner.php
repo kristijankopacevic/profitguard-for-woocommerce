@@ -137,6 +137,12 @@ final class Scanner {
 				'order_total'     => $order_total,
 				'product_offset'  => 0,
 				'order_page'      => 1,
+				// Which batches have already been applied. Action Scheduler
+				// retries a failed action, and a webhook or a manual re-run can
+				// fire the same batch twice - without this, one repeat
+				// double-counts every tally and duplicates every finding in it.
+				'products_done'   => array(),
+				'orders_done'     => array(),
 				'orders_seen'     => 0,
 				'missing_emitted' => 0,
 				'margin'          => array(),
@@ -182,6 +188,15 @@ final class Scanner {
 			return;
 		}
 
+		// Applying the same offset twice would insert its findings again and
+		// add its counts to the tally a second time.
+		$done = isset( $state['products_done'] ) && is_array( $state['products_done'] )
+			? $state['products_done']
+			: array();
+		if ( isset( $done[ (string) $offset ] ) ) {
+			return;
+		}
+
 		$options = self::scan_options();
 		$ids     = Catalog::sellable_ids( $offset, Catalog::BATCH_SIZE );
 
@@ -208,8 +223,10 @@ final class Scanner {
 			Repository::insert_findings( $scan_id, $findings );
 		}
 
-		$state['margin']         = $totals;
-		$state['product_offset'] = $offset + Catalog::BATCH_SIZE;
+		$done[ (string) $offset ]  = true;
+		$state['products_done']    = $done;
+		$state['margin']           = $totals;
+		$state['product_offset']   = $offset + Catalog::BATCH_SIZE;
 		self::save_state( $state );
 
 		$more = count( $ids ) === Catalog::BATCH_SIZE;
@@ -232,6 +249,13 @@ final class Scanner {
 		$state   = self::state();
 
 		if ( (int) ( $state['scan_id'] ?? 0 ) !== $scan_id ) {
+			return;
+		}
+
+		$done = isset( $state['orders_done'] ) && is_array( $state['orders_done'] )
+			? $state['orders_done']
+			: array();
+		if ( isset( $done[ (string) $page ] ) ) {
 			return;
 		}
 
@@ -293,6 +317,8 @@ final class Scanner {
 			Repository::insert_findings( $scan_id, $findings );
 		}
 
+		$done[ (string) $page ]   = true;
+		$state['orders_done']     = $done;
 		$state['shipping']        = $shipping;
 		$state['missing_emitted'] = $missing_emitted;
 		$state['order_page']      = $page + 1;
@@ -318,6 +344,11 @@ final class Scanner {
 		$state   = self::state();
 
 		if ( (int) ( $state['scan_id'] ?? 0 ) !== $scan_id ) {
+			return;
+		}
+		if ( ! empty( $state['finished'] ) ) {
+			// Already completed. A retried finish would insert the
+			// carrier-level findings a second time.
 			return;
 		}
 

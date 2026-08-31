@@ -53,6 +53,11 @@
 	min-width: 180px;
 }
 
+.profitguard-score-value .profitguard-card-label {
+	display: block;
+	margin-bottom: 4px;
+}
+
 .profitguard-score-value strong {
 	font-size: 44px;
 	line-height: 1;

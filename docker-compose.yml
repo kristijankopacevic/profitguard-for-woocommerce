@@ -1,0 +1,76 @@
+# Zero-cost local development environment.
+#
+# `wp-env` is the tool the WordPress handbook recommends and .wp-env.json is
+# provided for it. This Compose file is the fallback for machines where wp-env
+# cannot BUILD its images - it needs a working Docker buildkit, and on a locked
+# down or read-only Docker install that step fails while pulling and running
+# prebuilt images still works perfectly.
+#
+# Everything here is an official image from Docker Hub. Nothing is paid, nothing
+# needs an account, and no image is built locally.
+#
+#   docker compose up -d
+#   docker compose run --rm wpcli   # installs WordPress + WooCommerce
+#   open http://localhost:8080/wp-admin  (admin / admin)
+#
+services:
+  db:
+    image: mariadb:11
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: wordpress
+      MARIADB_ROOT_PASSWORD: root
+    healthcheck:
+      # WordPress fails to install against a database that is up but not yet
+      # accepting connections, and the failure looks like a WordPress bug.
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - db:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:php8.2-apache
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DEBUG: 1
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'WP_DEBUG_LOG', true );
+        define( 'WP_DEBUG_DISPLAY', false );
+    volumes:
+      - wp:/var/www/html
+      # The plugin is mounted live, so an edit is visible on the next request
+      # with no rebuild and no copy step.
+      - .:/var/www/html/wp-content/plugins/profitguard-for-woocommerce
+
+  wpcli:
+    image: wordpress:cli-php8.2
+    depends_on:
+      - wordpress
+    user: "33:33"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wp:/var/www/html
+      - .:/var/www/html/wp-content/plugins/profitguard-for-woocommerce
+    entrypoint: ["/bin/sh", "-c"]
+    # Idles by default; you pass the command. See DEVELOPMENT.md for the
+    # one-line bootstrap.
+    command: ["wp --info"]
+
+volumes:
+  db:
+  wp:

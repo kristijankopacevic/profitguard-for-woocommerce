@@ -283,6 +283,7 @@ final class Pages {
 		?>
 		<div class="profitguard-score">
 			<div class="profitguard-score-value">
+				<span class="profitguard-card-label"><?php esc_html_e( 'ProfitGuard Score', 'profitguard-for-woocommerce' ); ?></span>
 				<?php if ( null === $value ) : ?>
 					<span class="profitguard-unknown">&mdash;</span>
 					<p class="profitguard-card-note">
