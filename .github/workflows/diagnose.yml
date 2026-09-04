@@ -14,23 +14,20 @@ jobs:
           php-version: '8.2'
           tools: composer
       - run: composer install --no-interaction --prefer-dist -q
-      - name: What phpcs actually scans
+      - name: Clean measurement, no progress, serial
         run: |
           echo "### php files present, excluding vendor"
-          find . -path ./vendor -prune -o -name '*.php' -print | sort > /tmp/present.txt
-          wc -l < /tmp/present.txt
-          echo "### files appearing in the phpcs json report"
-          vendor/bin/phpcs --report=json . > /tmp/cs.json 2>/dev/null || true
-          jq -r '.files | keys[]' /tmp/cs.json | sed 's#.*/profitguard-for-woocommerce/##' | sort > /tmp/scanned.txt
-          wc -l < /tmp/scanned.txt
-          cat /tmp/scanned.txt
-          echo "### totals"
+          find . -path ./vendor -prune -o -name '*.php' -print | wc -l
+          echo "### phpcs json, progress stripped"
+          vendor/bin/phpcs --report=json --parallel=1 -q . 2>/dev/null | sed 's/^[^{]*//' > /tmp/cs.json || true
+          head -c 80 /tmp/cs.json; echo
+          echo "--- file count in report ---"
+          jq -r '.files | length' /tmp/cs.json
+          echo "--- totals ---"
           jq -c '.totals' /tmp/cs.json
-      - name: Force includes and tests explicitly
-        run: |
-          echo "### explicit includes/"
-          vendor/bin/phpcs --report=summary includes/ 2>&1 | tail -25 || true
-          echo "### explicit tests/"
-          vendor/bin/phpcs --report=summary tests/ 2>&1 | tail -25 || true
-      - name: The Repository.php warnings
-        run: vendor/bin/phpcs --report=full includes/Plugin/Repository.php 2>&1 | head -40 || true
+          echo "--- every file phpcs reported on ---"
+          jq -r '.files | keys[]' /tmp/cs.json | sed 's#.*/profitguard-for-woocommerce/##' | sort
+      - name: Summary over whole tree
+        run: vendor/bin/phpcs --report=summary --parallel=1 . 2>&1 | tail -30 || true
+      - name: Repository.php detail
+        run: vendor/bin/phpcs --report=full --parallel=1 includes/Plugin/Repository.php 2>&1 | head -45 || true
