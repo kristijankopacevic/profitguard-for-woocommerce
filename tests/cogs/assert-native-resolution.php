@@ -133,7 +133,10 @@ pg_expect( 'a variation with no cost anywhere reports no source', $bare_cost['so
 // 3. ProfitGuard's product-level answer AGREES with core's order-item answer.
 //    This is the reconciliation property, and it is the whole point.
 // ---------------------------------------------------------------------------
-foreach ( array( 'NA-INHERIT' => 1000, 'NA-OVERRIDE' => 400 ) as $sku => $expected_unit_minor ) {
+foreach ( array(
+	'NA-INHERIT'  => 1000,
+	'NA-OVERRIDE' => 400,
+) as $sku => $expected_unit_minor ) {
 	$variation_id = (int) wc_get_product_id_by_sku( $sku );
 	$order        = wc_create_order();
 	$order->add_product( wc_get_product( $variation_id ), 2 );

@@ -46,7 +46,7 @@ if ( ! is_array( $first ) || ! isset( $first[0] ) ) {
 	WP_CLI::error( 'could not read a data row from ' . $csv_path );
 }
 
-$sku = trim( (string) $first[0] );
+$sku        = trim( (string) $first[0] );
 $product_id = (int) wc_get_product_id_by_sku( $sku );
 if ( $product_id < 1 ) {
 	WP_CLI::error( 'no product for SKU ' . $sku );

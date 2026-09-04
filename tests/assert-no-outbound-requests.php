@@ -142,7 +142,7 @@ foreach ( $iterator as $file ) {
 	}
 }
 
-printf( "scanned %d shipped PHP file(s) under %s%s", $scanned, $root, PHP_EOL );
+printf( 'scanned %d shipped PHP file(s) under %s%s', $scanned, $root, PHP_EOL );
 
 if ( $scanned < 1 ) {
 	fwrite( STDERR, "ERROR: no PHP files found; the check would pass vacuously.\n" );
@@ -150,9 +150,9 @@ if ( $scanned < 1 ) {
 }
 
 if ( ! empty( $local_file_reads ) ) {
-	printf( "local filesystem reads in shipped code (permitted, listed for review):%s", PHP_EOL );
+	printf( 'local filesystem reads in shipped code (permitted, listed for review):%s', PHP_EOL );
 	foreach ( $local_file_reads as $entry ) {
-		printf( "  %s%s", $entry, PHP_EOL );
+		printf( '  %s%s', $entry, PHP_EOL );
 	}
 }
 
@@ -164,4 +164,4 @@ if ( ! empty( $violations ) ) {
 	exit( 1 );
 }
 
-printf( "NO_OUTBOUND_REQUESTS_PASS%s", PHP_EOL );
+printf( 'NO_OUTBOUND_REQUESTS_PASS%s', PHP_EOL );
