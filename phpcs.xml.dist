@@ -170,6 +170,30 @@
 		<!-- Checks whether the mounted samples/ directory can be written to. -->
 		<exclude-pattern>/bin/*</exclude-pattern>
 	</rule>
+	<rule ref="WordPress.DB.PreparedSQLPlaceholders">
+		<!--
+			Two false positives the sniff cannot avoid, both verified by hand:
+
+			UnfinishedPrepare - "replacement variables but no placeholders" -
+			fires because the placeholders live in a VARIABLE the sniff cannot
+			read into. In query_findings() $where is seeded unconditionally with
+			'scan_id = %d' and $params with $scan_id, so there is always at
+			least one placeholder and one bound value. In
+			carrier_costs_for_orders() $placeholders is one %d per id, built
+			from a list the function has already returned early on if empty and
+			every element of which is intval-cast.
+
+			ReplacementsWrongNumber - "found 1, expected 2" - fires because the
+			sniff counts a spread argument (...$query_params) as a single
+			replacement. $query_params is $params plus per_page and offset:
+			exactly one value per placeholder.
+
+			Excluded in the ruleset rather than in the file, for the same reason
+			as the sniffs above - and because a per-line `phpcs:ignore` covers
+			only the next line, while these are multi-line prepare() calls.
+		-->
+		<exclude-pattern>/includes/Plugin/Repository.php</exclude-pattern>
+	</rule>
 	<rule ref="WordPress.DB.SlowDBQuery">
 		<!--
 			The seeder deletes its own previous demo rows by looking them up on the
