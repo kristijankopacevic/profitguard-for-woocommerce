@@ -17,6 +17,7 @@ namespace ProfitGuard\Admin;
 
 use ProfitGuard\Core\Finding;
 use ProfitGuard\Core\Money;
+use ProfitGuard\Woo\CostProvider;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -222,5 +223,33 @@ final class Labels {
 	 */
 	public static function percent( ?int $bp ): string {
 		return Money::format_percent_bp( $bp, wc_get_price_decimal_separator() );
+	}
+	/**
+	 * Where a resolved cost is stored, in words.
+	 *
+	 * A merchant deciding whether to let an import replace a cost needs to know
+	 * WHOSE cost it is. "WooCommerce's own field" and "imported into ProfitGuard"
+	 * lead to different decisions, and an inherited parent cost is a third case
+	 * again - editing the variation would not change it.
+	 *
+	 * @param string $source A source returned by CostProvider::get_cost().
+	 * @return string
+	 */
+	public static function cost_source( string $source ): string {
+		switch ( $source ) {
+			case CostProvider::SOURCE_NATIVE:
+				return __( 'WooCommerce Cost of Goods Sold', 'profitguard-for-woocommerce' );
+			case CostProvider::SOURCE_NATIVE_INHERITED:
+				return __( 'WooCommerce Cost of Goods Sold, inherited from the parent product', 'profitguard-for-woocommerce' );
+			case CostProvider::SOURCE_NATIVE_COMBINED:
+				return __( 'WooCommerce Cost of Goods Sold, parent plus this variation', 'profitguard-for-woocommerce' );
+			case CostProvider::SOURCE_PROFITGUARD:
+				return __( 'Imported into ProfitGuard', 'profitguard-for-woocommerce' );
+			case CostProvider::SOURCE_FOREIGN:
+				return __( 'Another cost-of-goods plugin', 'profitguard-for-woocommerce' );
+			case CostProvider::SOURCE_NONE:
+			default:
+				return __( 'No cost recorded', 'profitguard-for-woocommerce' );
+		}
 	}
 }

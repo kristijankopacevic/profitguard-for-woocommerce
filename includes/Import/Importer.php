@@ -239,13 +239,91 @@ final class Importer {
 	// Committing.
 
 	/**
-	 * Commit product costs.
+	 * What a cost import would change, row by row, before anything is written.
+	 *
+	 * WooCommerce 10.3 put Cost of Goods Sold in core, so an imported cost can
+	 * now land on top of a value the merchant entered in the product editor
+	 * themselves. Replacing that silently is the one outcome this plugin must
+	 * not produce, so every row is resolved against the store first and any row
+	 * that would replace a non-null NATIVE cost is flagged. The commit refuses
+	 * those rows unless the merchant has explicitly confirmed them.
+	 *
+	 * Rows whose cost is unchanged are still returned, marked, so the preview
+	 * can say "no change" rather than implying an update.
 	 *
 	 * @param array<int, string[]> $rows    Data rows.
 	 * @param array<string, int>   $mapping Concept => column index.
+	 * @param int                  $limit   How many rows to describe.
+	 * @return array{rows:array<int, array<string, mixed>>,native_overwrites:int,valid:int}
+	 */
+	public static function cost_change_plan( array $rows, array $mapping, int $limit = 25 ): array {
+		$currency = get_woocommerce_currency();
+		$mapped   = Mapper::map_cost_rows( $rows, $mapping, $currency );
+
+		$described         = array();
+		$native_overwrites = 0;
+
+		foreach ( $mapped['valid'] as $row ) {
+			$product_id = Catalog::id_from_sku( $row['sku'] );
+			$current    = null;
+			$source     = CostProvider::SOURCE_NONE;
+
+			if ( $product_id > 0 ) {
+				$product = wc_get_product( $product_id );
+				if ( $product ) {
+					$resolved = CostProvider::get_cost( $product );
+					$current  = $resolved['cost_minor'];
+					$source   = $resolved['source'];
+				}
+			}
+
+			// Only a NON-NULL native cost counts as an overwrite. A native
+			// field that is empty is not something the merchant set, so filling
+			// it in is what they asked for by importing.
+			$replaces_native = ( null !== $current )
+				&& CostProvider::is_native_source( $source )
+				&& $current !== $row['cost_minor'];
+
+			if ( $replaces_native ) {
+				++$native_overwrites;
+			}
+
+			if ( count( $described ) < $limit ) {
+				$described[] = array(
+					'row'             => $row['row'],
+					'sku'             => $row['sku'],
+					'product_id'      => $product_id,
+					'current_minor'   => $current,
+					'new_minor'       => $row['cost_minor'],
+					'source'          => $source,
+					'unmatched'       => 0 === $product_id,
+					'unchanged'       => null !== $current && $current === $row['cost_minor'],
+					'replaces_native' => $replaces_native,
+				);
+			}
+		}
+
+		return array(
+			'rows'              => $described,
+			'native_overwrites' => $native_overwrites,
+			'valid'             => count( $mapped['valid'] ),
+		);
+	}
+
+	/**
+	 * Commit product costs.
+	 *
+	 * @param array<int, string[]> $rows                   Data rows.
+	 * @param array<string, int>   $mapping                Concept => column index.
+	 * @param bool                 $allow_native_overwrite Whether the merchant confirmed
+	 *                                                     replacing costs held in
+	 *                                                     WooCommerce's own COGS field.
+	 *                                                     Defaults to false, so an
+	 *                                                     unconfirmed import cannot
+	 *                                                     replace one.
 	 * @return array<string, mixed> Result summary.
 	 */
-	public static function commit_costs( array $rows, array $mapping ): array {
+	public static function commit_costs( array $rows, array $mapping, bool $allow_native_overwrite = false ): array {
 		$currency = get_woocommerce_currency();
 		$mapped   = Mapper::map_cost_rows( $rows, $mapping, $currency );
 
@@ -254,6 +332,7 @@ final class Importer {
 		$updated   = 0;
 		$unchanged = 0;
 		$unmatched = array();
+		$blocked   = array();
 
 		foreach ( $mapped['valid'] as $row ) {
 			$product_id = Catalog::id_from_sku( $row['sku'] );
@@ -267,6 +346,26 @@ final class Importer {
 				);
 				continue;
 			}
+			// A row that would replace a cost the merchant entered in
+			// WooCommerce's own field is refused unless they confirmed it on
+			// the preview screen. Refusing is not a failure: it is the
+			// preview-then-confirm contract holding.
+			if ( ! $allow_native_overwrite ) {
+				$product = wc_get_product( $product_id );
+				if ( $product ) {
+					$resolved = CostProvider::get_cost( $product );
+					if ( null !== $resolved['cost_minor']
+						&& CostProvider::is_native_source( $resolved['source'] )
+						&& $resolved['cost_minor'] !== $row['cost_minor'] ) {
+						$blocked[] = array(
+							'row' => $row['row'],
+							'sku' => $row['sku'],
+						);
+						continue;
+					}
+				}
+			}
+
 			if ( CostProvider::set_cost( $product_id, $row['cost_minor'] ) ) {
 				++$updated;
 			} else {
@@ -281,9 +380,11 @@ final class Importer {
 			'unchanged' => $unchanged,
 			'unmatched' => count( $unmatched ),
 			'rejected'  => count( $mapped['rejected'] ),
+			'blocked'   => count( $blocked ),
 			'details'   => array(
 				'rejected'  => array_slice( $mapped['rejected'], 0, 50 ),
 				'unmatched' => array_slice( $unmatched, 0, 50 ),
+				'blocked'   => array_slice( $blocked, 0, 50 ),
 			),
 		);
 

@@ -297,7 +297,13 @@ final class Admin {
 		$rows = is_array( $preview['rows'] ) ? $preview['rows'] : array();
 
 		if ( Importer::KIND_COST === $preview['kind'] ) {
-			$totals  = Importer::commit_costs( $rows, $mapping );
+			// Replacing a cost held in WooCommerce's own COGS field needs an
+			// explicit tick on the preview screen. Absent it, those rows are
+			// refused rather than applied.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- check_admin_referer() ran in handle_post() before this was dispatched.
+			$allow_native = isset( $_POST['confirm_native_overwrite'] ) && '1' === sanitize_text_field( wp_unslash( $_POST['confirm_native_overwrite'] ) );
+
+			$totals  = Importer::commit_costs( $rows, $mapping, $allow_native );
 			$message = sprintf(
 				/* translators: 1: products updated, 2: rows that matched nothing, 3: rows rejected. */
 				__( 'Costs imported: %1$d products updated, %2$d rows matched no product, %3$d rows rejected.', 'profitguard-for-woocommerce' ),
@@ -305,6 +311,19 @@ final class Admin {
 				(int) $totals['unmatched'],
 				(int) $totals['rejected']
 			);
+
+			if ( ! empty( $totals['blocked'] ) ) {
+				$message .= ' ' . sprintf(
+					/* translators: %d: rows left unchanged because they would have replaced a cost in WooCommerce's own field. */
+					_n(
+						'%d row was left alone because it would have replaced a cost held in WooCommerce's own field.',
+						'%d rows were left alone because they would have replaced a cost held in WooCommerce's own field.',
+						(int) $totals['blocked'],
+						'profitguard-for-woocommerce'
+					),
+					(int) $totals['blocked']
+				);
+			}
 		} else {
 			$totals  = Importer::commit_carrier( $rows, $mapping );
 			$message = sprintf(

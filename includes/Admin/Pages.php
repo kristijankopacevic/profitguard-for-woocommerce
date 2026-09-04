@@ -23,6 +23,7 @@ use ProfitGuard\Plugin\Database;
 use ProfitGuard\Plugin\Repository;
 use ProfitGuard\Plugin\Settings;
 use ProfitGuard\Scan\Scanner;
+use ProfitGuard\Woo\NativeCogs;
 use ProfitGuard\Woo\Orders;
 
 defined( 'ABSPATH' ) || exit;
@@ -677,12 +678,20 @@ final class Pages {
 		<h2><?php esc_html_e( 'Product costs', 'profitguard-for-woocommerce' ); ?></h2>
 		<p>
 			<?php
-			esc_html_e(
-				'WooCommerce has no cost field of its own, so margins need a cost from you. Upload a CSV with a SKU column and a cost column.',
-				'profitguard-for-woocommerce'
-			);
+			if ( NativeCogs::is_enabled() ) {
+				esc_html_e(
+					'Costs are written to WooCommerce's own Cost of Goods Sold field, so they appear in the product editor as well. Upload a CSV with a SKU column and a cost column.',
+					'profitguard-for-woocommerce'
+				);
+			} else {
+				esc_html_e(
+					'Margins need a cost for each product. Upload a CSV with a SKU column and a cost column.',
+					'profitguard-for-woocommerce'
+				);
+			}
 			?>
 		</p>
+		<?php self::native_cogs_notice(); ?>
 		<?php self::upload_form( Importer::KIND_COST ); ?>
 
 		<h2><?php esc_html_e( 'Carrier costs', 'profitguard-for-woocommerce' ); ?></h2>
@@ -853,6 +862,84 @@ final class Pages {
 				</tbody>
 			</table>
 
+			<?php if ( Importer::KIND_COST === $kind ) : ?>
+				<?php
+				// Resolve every row against the store BEFORE anything is
+				// written, so the merchant sees current -> new per row rather
+				// than a raw CSV they have to trust.
+				$plan = Importer::cost_change_plan( $rows, $mapping );
+				?>
+				<h3><?php esc_html_e( 'What this would change', 'profitguard-for-woocommerce' ); ?></h3>
+				<table class="widefat striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'SKU', 'profitguard-for-woocommerce' ); ?></th>
+							<th><?php esc_html_e( 'Cost now', 'profitguard-for-woocommerce' ); ?></th>
+							<th><?php esc_html_e( 'Cost after import', 'profitguard-for-woocommerce' ); ?></th>
+							<th><?php esc_html_e( 'Where the current cost lives', 'profitguard-for-woocommerce' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+					<?php foreach ( $plan['rows'] as $change ) : ?>
+						<tr>
+							<td><?php echo esc_html( (string) $change['sku'] ); ?></td>
+							<td>
+								<?php
+								// Labels::money() is already escaped and renders
+								// null as a dash rather than as a zero.
+								echo wp_kses_post( Labels::money( $change['current_minor'] ) );
+								?>
+							</td>
+							<td>
+								<?php echo wp_kses_post( Labels::money( (int) $change['new_minor'] ) ); ?>
+								<?php if ( $change['unmatched'] ) : ?>
+									<em><?php esc_html_e( '- no product with this SKU', 'profitguard-for-woocommerce' ); ?></em>
+								<?php elseif ( $change['unchanged'] ) : ?>
+									<em><?php esc_html_e( '- no change', 'profitguard-for-woocommerce' ); ?></em>
+								<?php endif; ?>
+							</td>
+							<td>
+								<?php echo esc_html( Labels::cost_source( (string) $change['source'] ) ); ?>
+								<?php if ( $change['replaces_native'] ) : ?>
+									<strong><?php esc_html_e( '- would be replaced', 'profitguard-for-woocommerce' ); ?></strong>
+								<?php endif; ?>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+					</tbody>
+				</table>
+
+				<?php if ( $plan['native_overwrites'] > 0 ) : ?>
+					<div class="notice notice-warning inline">
+						<p>
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: %d: number of rows that would replace a cost in WooCommerce's own field. */
+									_n(
+										'%d row would replace a cost held in WooCommerce\'s own Cost of Goods Sold field - a value you or someone else entered in the product editor.',
+										'%d rows would replace costs held in WooCommerce\'s own Cost of Goods Sold field - values you or someone else entered in the product editor.',
+										(int) $plan['native_overwrites'],
+										'profitguard-for-woocommerce'
+									),
+									(int) $plan['native_overwrites']
+								)
+							);
+							?>
+						</p>
+						<p>
+							<label>
+								<input type="checkbox" name="confirm_native_overwrite" value="1" />
+								<?php esc_html_e( 'Yes, replace those existing costs.', 'profitguard-for-woocommerce' ); ?>
+							</label>
+						</p>
+						<p>
+							<?php esc_html_e( 'Leave it unticked and those rows are skipped; everything else still imports.', 'profitguard-for-woocommerce' ); ?>
+						</p>
+					</div>
+				<?php endif; ?>
+			<?php endif; ?>
+
 			<p class="submit">
 				<button type="submit" class="button button-primary"><?php esc_html_e( 'Confirm and import', 'profitguard-for-woocommerce' ); ?></button>
 				<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=' . Admin::SLUG_IMPORT ) ); ?>"><?php esc_html_e( 'Cancel', 'profitguard-for-woocommerce' ); ?></a>
@@ -1017,5 +1104,41 @@ final class Pages {
 
 		<?php
 		self::footer();
+	}
+	/**
+	 * Tell the merchant about WooCommerce's own cost field, when it is off.
+	 *
+	 * WooCommerce 10.3 added Cost of Goods Sold to core, but it is opt-in and
+	 * disabled by default, so most stores have it available and unused. Saying
+	 * so is more useful than silently writing costs into ProfitGuard's own key
+	 * and leaving the merchant wondering why the product editor shows nothing.
+	 *
+	 * This notice does not enable anything. It points at the setting and says
+	 * what turning it on would give them; nothing is ever written into the
+	 * feature's storage while it is disabled.
+	 */
+	private static function native_cogs_notice(): void {
+		if ( NativeCogs::is_enabled() || ! NativeCogs::is_available() ) {
+			return;
+		}
+
+		$settings_url = admin_url( 'admin.php?page=wc-settings&tab=advanced&section=features' );
+		?>
+		<div class="notice notice-info inline">
+			<p>
+				<?php
+				esc_html_e(
+					'WooCommerce has a built-in Cost of Goods Sold field, and it is switched off for this store. Turning it on lets ProfitGuard read and write the same cost you see in the product editor, and lets those costs feed WooCommerce\'s own analytics. ProfitGuard works either way, and will not write into the feature while it is disabled.',
+					'profitguard-for-woocommerce'
+				);
+				?>
+			</p>
+			<p>
+				<a href="<?php echo esc_url( $settings_url ); ?>">
+					<?php esc_html_e( 'Open WooCommerce feature settings', 'profitguard-for-woocommerce' ); ?>
+				</a>
+			</p>
+		</div>
+		<?php
 	}
 }

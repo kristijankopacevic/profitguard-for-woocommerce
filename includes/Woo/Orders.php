@@ -141,6 +141,7 @@ final class Orders {
 	 * @return array{
 	 *     id:int,
 	 *     number:string,
+	 *     goods_cost_minor:int|null,
 	 *     total_minor:int|null,
 	 *     shipping_charged_minor:int|null,
 	 *     shipping_method:string,
@@ -175,9 +176,22 @@ final class Orders {
 
 		$created = $order->get_date_created();
 
+		/*
+		 * The order's goods cost, taken from WooCommerce's own COGS total when
+		 * the store has the feature on.
+		 *
+		 * ProfitGuard has never computed an order-level goods cost of its own,
+		 * so this does not displace a rival figure - it exposes WooCommerce's,
+		 * which is what its analytics report. Reading it here rather than
+		 * recomputing from products is what keeps the two reconciled. Null when
+		 * the feature is off or the order carries no COGS, and null is not zero.
+		 */
+		$goods_cost = NativeCogs::get_order_total( $order );
+
 		return array(
 			'id'                     => (int) $order->get_id(),
 			'number'                 => (string) $order->get_order_number(),
+			'goods_cost_minor'       => $goods_cost,
 			'total_minor'            => Money::parse_decimal_to_minor(
 				(string) wc_format_decimal( $order->get_total(), wc_get_price_decimals() )
 			),
