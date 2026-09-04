@@ -334,7 +334,7 @@ final class Admin {
 				(int) $totals['duplicate'],
 				(int) $totals['rejected']
 			);
-		}
+		}//end if
 
 		Importer::forget_preview( $token );
 

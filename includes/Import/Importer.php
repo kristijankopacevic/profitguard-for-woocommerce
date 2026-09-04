@@ -301,7 +301,7 @@ final class Importer {
 					'replaces_native' => $replaces_native,
 				);
 			}
-		}
+		}//end foreach
 
 		return array(
 			'rows'              => $described,
@@ -371,7 +371,7 @@ final class Importer {
 			} else {
 				++$unchanged;
 			}
-		}
+		}//end foreach
 
 		$totals = array(
 			'rows'      => count( $rows ),

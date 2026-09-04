@@ -44,7 +44,10 @@ $overriding->set_regular_price( '30.00' );
 $overriding->set_cogs_value( 4.0 );
 $overriding->save();
 
-foreach ( array( 'INHERIT' => $inheriting, 'OVERRIDE' => $overriding ) as $label => $variation ) {
+foreach ( array(
+	'INHERIT'  => $inheriting,
+	'OVERRIDE' => $overriding,
+) as $label => $variation ) {
 	$fresh = wc_get_product( $variation->get_id() );
 	printf(
 		"VARIATION_%s own=%s effective=%s additive=%s\n",

@@ -22,11 +22,11 @@ if ( function_exists( 'wc_get_container' ) && class_exists( $controller_class ) 
 }
 
 $surface = array(
-	'WC_Product_Simple'      => array( 'get_cogs_value', 'set_cogs_value', 'get_cogs_effective_value', 'get_cogs_total_value' ),
-	'WC_Product_Variable'    => array( 'get_cogs_value', 'set_cogs_value' ),
-	'WC_Product_Variation'   => array( 'get_cogs_value', 'get_cogs_effective_value', 'get_cogs_value_is_additive', 'set_cogs_value_is_additive' ),
-	'WC_Order'               => array( 'has_cogs', 'calculate_cogs_total_value', 'get_cogs_total_value', 'set_cogs_total_value' ),
-	'WC_Order_Item_Product'  => array( 'get_cogs_value', 'set_cogs_value', 'calculate_cogs_value_core' ),
+	'WC_Product_Simple'     => array( 'get_cogs_value', 'set_cogs_value', 'get_cogs_effective_value', 'get_cogs_total_value' ),
+	'WC_Product_Variable'   => array( 'get_cogs_value', 'set_cogs_value' ),
+	'WC_Product_Variation'  => array( 'get_cogs_value', 'get_cogs_effective_value', 'get_cogs_value_is_additive', 'set_cogs_value_is_additive' ),
+	'WC_Order'              => array( 'has_cogs', 'calculate_cogs_total_value', 'get_cogs_total_value', 'set_cogs_total_value' ),
+	'WC_Order_Item_Product' => array( 'get_cogs_value', 'set_cogs_value', 'calculate_cogs_value_core' ),
 );
 
 foreach ( $surface as $class_name => $methods ) {

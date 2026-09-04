@@ -120,7 +120,7 @@ foreach ( array( 'VPROBE-NONE-DEFAULT', 'VPROBE-OWN-ADDITIVE', 'VPROBE-OWN-REPLA
 		$order->save();
 	}
 
-	$fresh = wc_get_order( $order->get_id() );
+	$fresh       = wc_get_order( $order->get_id() );
 	$item_values = array();
 	foreach ( $fresh->get_items() as $item ) {
 		$item_values[] = var_export( $item->get_cogs_value(), true );
