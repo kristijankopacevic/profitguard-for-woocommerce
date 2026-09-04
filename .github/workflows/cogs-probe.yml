@@ -62,6 +62,8 @@ jobs:
           wp eval-file /tmp/pgtests/cogs/probe-introspect.php
           echo "=== ROUND TRIP ==="
           wp eval-file /tmp/pgtests/cogs/probe-roundtrip.php
+          echo "=== VARIATION SEMANTICS, everything re-fetched ==="
+          wp eval-file /tmp/pgtests/cogs/probe-variations.php
 
       - name: Disable again and see what the fallback must cope with
         run: |
