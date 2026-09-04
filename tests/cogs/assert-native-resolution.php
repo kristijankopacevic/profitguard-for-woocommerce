@@ -25,6 +25,19 @@ if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 }
 
 
+/*
+ * Delete this script's own fixtures first, so it can be run more than once
+ * against the same store. WooCommerce raises "Invalid or duplicated SKU" on a
+ * second save of the same SKU, which turns a re-run into a fatal rather than a
+ * re-check.
+ */
+foreach ( array( 'NA-MUG', 'NA-SHIRT', 'NA-INHERIT', 'NA-OVERRIDE', 'NA-BARE-PARENT', 'NA-BARE-VAR' ) as $pg_sku ) {
+	$pg_existing = (int) wc_get_product_id_by_sku( $pg_sku );
+	if ( $pg_existing > 0 ) {
+		wp_delete_post( $pg_existing, true );
+	}
+}
+
 $failures = array();
 
 /**

@@ -328,15 +328,10 @@ function assertUnchanged(before, after, message) {
     `exported CSV cells could be evaluated as formulas: ${dangerous.slice(0, 5).join(" | ")}`
   );
 
-  // ---------------------------------------------- native COGS, when enabled
-  if (COGS === "on") {
-    const resolution = wp(["eval-file", "/pgcogs/assert-native-resolution.php"]);
-    console.log(resolution);
-    assert(
-      resolution.includes("NATIVE_RESOLUTION_PASS"),
-      "native COGS resolution assertions did not pass"
-    );
-  }
+  // Native COGS resolution is asserted by tests/cogs/assert-native-resolution.php
+  // during fresh-install.sh, against the same store. It needs a store, not a
+  // browser, and running it here as well tried to create its fixtures a second
+  // time - which WooCommerce rejects as a duplicate SKU.
 
   assert(
     consoleErrors.length === 0,
