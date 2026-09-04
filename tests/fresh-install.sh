@@ -100,7 +100,7 @@ docker run -d --name pg-wp --network pg-test -p "${PG_PORT}:80" \
   -e WORDPRESS_DB_PASSWORD=wordpress -e WORDPRESS_DB_NAME=wordpress \
   -v "$(pwd)/${ZIP_PATH}:/tmp/${SLUG}.zip:ro" \
   -v "$(pwd)/bin:/pgbin:ro" \
-  -v "$(pwd)/samples:/pgsamples" \
+  -v "$(pwd)/samples:/pgsamples:ro" \
   -v "$(pwd)/tests/cogs:/pgcogs:ro" \
   wordpress:php8.3-apache >/dev/null
 

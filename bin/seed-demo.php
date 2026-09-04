@@ -352,8 +352,17 @@ $rows[] = '99999999,JD0000999002,GLS,12.15,EUR';
 $n     += 2;
 
 $path = profitguard_sample_path( 'sample-carrier-costs.csv' );
-file_put_contents( $path, implode( "\n", $rows ) . "\n" );
-WP_CLI::log( sprintf( '  %d carrier rows written to samples/sample-carrier-costs.csv', $n ) );
+if ( '' === $path ) {
+	// profitguard_sample_path() documents '' as "nowhere writable", and says
+	// that is not an error because the committed samples are already correct.
+	// Writing to it anyway was a ValueError waiting to happen, and it happened
+	// on CI, where samples/ is mounted read-only precisely so the committed
+	// fixtures are the ones under test.
+	WP_CLI::log( sprintf( '  %d carrier rows generated; samples/ is read-only, keeping the committed CSV', $n ) );
+} else {
+	file_put_contents( $path, implode( "\n", $rows ) . "\n" );
+	WP_CLI::log( sprintf( '  %d carrier rows written to samples/sample-carrier-costs.csv', $n ) );
+}
 
 /*
  * A product cost list covering products the fixture deliberately left without
@@ -404,7 +413,11 @@ foreach ( $skus as $index => $sku ) {
 }//end foreach
 
 $cost_path = profitguard_sample_path( 'sample-product-costs.csv' );
-file_put_contents( $cost_path, implode( "\n", $cost_rows ) . "\n" );
-WP_CLI::log( sprintf( '  %d cost rows written to samples/sample-product-costs.csv', $c ) );
+if ( '' === $cost_path ) {
+	WP_CLI::log( sprintf( '  %d cost rows generated; samples/ is read-only, keeping the committed CSV', $c ) );
+} else {
+	file_put_contents( $cost_path, implode( "\n", $cost_rows ) . "\n" );
+	WP_CLI::log( sprintf( '  %d cost rows written to samples/sample-product-costs.csv', $c ) );
+}
 
 WP_CLI::success( 'Demo data seeded. Run: wp profitguard scan (or press Run Profit Scan in the admin).' );
