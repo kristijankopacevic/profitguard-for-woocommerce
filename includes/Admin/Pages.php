@@ -680,7 +680,7 @@ final class Pages {
 			<?php
 			if ( NativeCogs::is_enabled() ) {
 				esc_html_e(
-					'Costs are written to WooCommerce's own Cost of Goods Sold field, so they appear in the product editor as well. Upload a CSV with a SKU column and a cost column.',
+					'Costs are written to the WooCommerce Cost of Goods Sold field, so they appear in the product editor as well. Upload a CSV with a SKU column and a cost column.',
 					'profitguard-for-woocommerce'
 				);
 			} else {

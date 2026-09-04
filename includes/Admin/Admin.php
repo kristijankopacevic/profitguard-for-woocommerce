@@ -316,8 +316,8 @@ final class Admin {
 				$message .= ' ' . sprintf(
 					/* translators: %d: rows left unchanged because they would have replaced a cost in WooCommerce's own field. */
 					_n(
-						'%d row was left alone because it would have replaced a cost held in WooCommerce's own field.',
-						'%d rows were left alone because they would have replaced a cost held in WooCommerce's own field.',
+						'%d row was left alone because it would have replaced a cost held in the WooCommerce Cost of Goods Sold field.',
+						'%d rows were left alone because they would have replaced a cost held in the WooCommerce Cost of Goods Sold field.',
 						(int) $totals['blocked'],
 						'profitguard-for-woocommerce'
 					),
