@@ -60,6 +60,65 @@ function assert(condition, message) {
   }
 }
 
+/**
+ * A deterministic snapshot of every product price in the store.
+ *
+ * Explicitly ordered by ID and sorted again here: wc_get_products() with
+ * limit -1 gives no ordering guarantee, and comparing two differently-ordered
+ * lists reports "a price changed" when nothing did. What is being asserted is
+ * that NOTHING changed, so this has to compare sets.
+ *
+ * @returns {string[]} One "id:regular:sale" line per product, sorted.
+ */
+function priceSnapshot() {
+  return wp([
+    "eval",
+    'foreach ( wc_get_products( array( "limit" => -1, "orderby" => "ID", "order" => "ASC", "return" => "ids" ) ) as $id ) { $p = wc_get_product( $id ); if ( $p ) { echo $id . ":" . $p->get_regular_price() . ":" . $p->get_sale_price() . "\\n"; } }',
+  ])
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .sort();
+}
+
+/**
+ * A deterministic snapshot of every order total and status.
+ *
+ * @returns {string[]} One "id:total:status" line per order, sorted.
+ */
+function orderSnapshot() {
+  return wp([
+    "eval",
+    'foreach ( wc_get_orders( array( "limit" => -1, "orderby" => "ID", "order" => "ASC", "return" => "ids" ) ) as $id ) { $o = wc_get_order( $id ); if ( $o ) { echo $id . ":" . $o->get_total() . ":" . $o->get_status() . "\\n"; } }',
+  ])
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .sort();
+}
+
+/**
+ * Compare two snapshots and, on a difference, name the rows that differ.
+ *
+ * A bare "something changed" is useless when the point is to prove a trust
+ * claim: the failure has to identify the product or order.
+ *
+ * @param {string[]} before  Snapshot taken first.
+ * @param {string[]} after   Snapshot taken later.
+ * @param {string}   message What the claim is.
+ */
+function assertUnchanged(before, after, message) {
+  const gone = before.filter((l) => !after.includes(l));
+  const fresh = after.filter((l) => !before.includes(l));
+  if (gone.length || fresh.length) {
+    throw new Error(
+      `ASSERTION FAILED: ${message}` +
+        `\n  only before: ${gone.slice(0, 8).join(" | ") || "(none)"}` +
+        `\n  only after:  ${fresh.slice(0, 8).join(" | ") || "(none)"}`
+    );
+  }
+}
+
 (async () => {
   fs.mkdirSync(SHOT_DIR, { recursive: true });
 
@@ -118,14 +177,8 @@ function assert(condition, message) {
   await page.screenshot({ path: `${SHOT_DIR}/2-findings.png`, fullPage: true });
 
   // --------------------------------------- prices before any import happens
-  const pricesBefore = wp([
-    "eval",
-    'foreach ( wc_get_products( array( "limit" => -1, "return" => "ids" ) ) as $id ) { $p = wc_get_product( $id ); echo $id . ":" . $p->get_regular_price() . ":" . $p->get_sale_price() . "\\n"; }',
-  ]);
-  const orderTotalsBefore = wp([
-    "eval",
-    'foreach ( wc_get_orders( array( "limit" => -1, "return" => "ids" ) ) as $id ) { $o = wc_get_order( $id ); echo $id . ":" . $o->get_total() . ":" . $o->get_status() . "\\n"; }',
-  ]);
+  const pricesBefore = priceSnapshot();
+  const orderTotalsBefore = orderSnapshot();
 
   // ------------------------------------------------- import product costs
   await page.goto(`${BASE}/wp-admin/admin.php?page=profitguard-import`, { waitUntil: "networkidle" });
@@ -151,11 +204,11 @@ function assert(condition, message) {
   await page.screenshot({ path: `${SHOT_DIR}/4b-import-preview.png`, fullPage: true });
 
   // Nothing may have been written yet: this is the preview step.
-  const pricesAtPreview = wp([
-    "eval",
-    'foreach ( wc_get_products( array( "limit" => -1, "return" => "ids" ) ) as $id ) { $p = wc_get_product( $id ); echo $id . ":" . $p->get_regular_price() . ":" . $p->get_sale_price() . "\\n"; }',
-  ]);
-  assert(pricesAtPreview === pricesBefore, "a price changed during the PREVIEW step, before any confirmation");
+  assertUnchanged(
+    pricesBefore,
+    priceSnapshot(),
+    "a price changed during the PREVIEW step, before any confirmation"
+  );
 
   // With native COGS on, the seeded store already holds native costs, so some
   // rows would replace one. Those rows must be refused until confirmed.
@@ -207,17 +260,17 @@ function assert(condition, message) {
   }
 
   // --------------------------------- the two trust claims, after a real write
-  const pricesAfter = wp([
-    "eval",
-    'foreach ( wc_get_products( array( "limit" => -1, "return" => "ids" ) ) as $id ) { $p = wc_get_product( $id ); echo $id . ":" . $p->get_regular_price() . ":" . $p->get_sale_price() . "\\n"; }',
-  ]);
-  assert(pricesAfter === pricesBefore, "a cost import changed a product price, which readme.txt says never happens");
+  assertUnchanged(
+    pricesBefore,
+    priceSnapshot(),
+    "a cost import changed a product price, which readme.txt says never happens"
+  );
 
-  const orderTotalsAfter = wp([
-    "eval",
-    'foreach ( wc_get_orders( array( "limit" => -1, "return" => "ids" ) ) as $id ) { $o = wc_get_order( $id ); echo $id . ":" . $o->get_total() . ":" . $o->get_status() . "\\n"; }',
-  ]);
-  assert(orderTotalsAfter === orderTotalsBefore, "a cost import changed an order, which readme.txt says never happens");
+  assertUnchanged(
+    orderTotalsBefore,
+    orderSnapshot(),
+    "a cost import changed an order, which readme.txt says never happens"
+  );
 
   // "Uploaded CSV files are parsed and discarded; the file itself is never
   // written to your uploads directory."
