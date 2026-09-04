@@ -66,11 +66,13 @@ defined( 'ABSPATH' ) || exit;
  * survives ProfitGuard being removed if the merchant chooses, and it is the
  * one piece of our data another plugin might reasonably want to read.
  *
- * The sniff is silenced per line rather than for the whole file. A file-wide
- * `phpcs:disable` here made the WordPress.org Plugin Check report this file as
- * having no direct-access guard at all: Plugin Check runs its own PHPCS without
- * WPCS loaded, so a disable naming a sniff it does not know swallowed its own
- * file-level finding. Narrow ignores keep both tools honest.
+ * The sniff is silenced in phpcs.xml.dist, not with an in-file directive.
+ * A file-wide PHPCS suppression here made the WordPress.org Plugin Check
+ * report this file as having no direct-access guard at all - the guard is on
+ * line 54 and always has been. Removing the equivalent directive from
+ * Plugin/Repository.php cleared the same false error there, which is how the
+ * cause was established. Note that the directive keyword cannot even be
+ * WRITTEN in this comment: PHPCS reads it out of prose as a real annotation.
  */
 
 /**
