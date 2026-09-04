@@ -14,20 +14,7 @@ jobs:
           php-version: '8.2'
           tools: composer
       - run: composer install --no-interaction --prefer-dist -q
-      - name: Clean measurement, no progress, serial
-        run: |
-          echo "### php files present, excluding vendor"
-          find . -path ./vendor -prune -o -name '*.php' -print | wc -l
-          echo "### phpcs json, progress stripped"
-          vendor/bin/phpcs --report=json --parallel=1 -q . 2>/dev/null | sed 's/^[^{]*//' > /tmp/cs.json || true
-          head -c 80 /tmp/cs.json; echo
-          echo "--- file count in report ---"
-          jq -r '.files | length' /tmp/cs.json
-          echo "--- totals ---"
-          jq -c '.totals' /tmp/cs.json
-          echo "--- every file phpcs reported on ---"
-          jq -r '.files | keys[]' /tmp/cs.json | sed 's#.*/profitguard-for-woocommerce/##' | sort
-      - name: Summary over whole tree
-        run: vendor/bin/phpcs --report=summary --parallel=1 . 2>&1 | tail -30 || true
-      - name: Repository.php detail
-        run: vendor/bin/phpcs --report=full --parallel=1 includes/Plugin/Repository.php 2>&1 | head -45 || true
+      - name: Which sniffs are failing, and how often
+        run: vendor/bin/phpcs --report=source --parallel=1 . 2>&1 | tail -40 || true
+      - name: Full report for the offending files
+        run: vendor/bin/phpcs --report=full --parallel=1 --report-width=120 . 2>&1 | head -220 || true
