@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Turn WooCommerce cost and carrier data into actionable margin and shipping-profit insights. Reads WooCommerce's own Cost of Goods Sold field, ranks findings by money at stake, and compares what the carrier billed against what the customer paid.">
+  <link rel="canonical" href="https://kristijankopacevic.github.io/profitguard-for-woocommerce/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ProfitGuard for WooCommerce">
+  <meta property="og:title" content="ProfitGuard for WooCommerce — margin and shipping-profit insights">
+  <meta property="og:description" content="WooCommerce tells you what you sold. ProfitGuard tells you what you kept: margin findings ranked by amount at stake, and the carrier invoice against what the customer actually paid.">
+  <meta property="og:url" content="https://kristijankopacevic.github.io/profitguard-for-woocommerce/">
+  <meta property="og:image" content="https://kristijankopacevic.github.io/profitguard-for-woocommerce/screenshots/dashboard.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <title>ProfitGuard for WooCommerce</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="screenshots.css">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"ProfitGuard for WooCommerce","applicationCategory":"BusinessApplication","operatingSystem":"WordPress, WooCommerce","description":"Turns WooCommerce cost and carrier data into ranked margin and shipping-profit findings. All analysis runs inside the merchant's own WordPress installation.","downloadUrl":"https://github.com/kristijankopacevic/profitguard-for-woocommerce/releases/latest","softwareVersion":"1.0.0","license":"https://www.gnu.org/licenses/old-licenses/gpl-2.0.html","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Does ProfitGuard work with WooCommerce's built-in Cost of Goods Sold?","acceptedAnswer":{"@type":"Answer","text":"Yes, and it prefers it. With the feature enabled ProfitGuard reads the native cost and writes imported costs back through WooCommerce's own API, so there is one cost field in the product editor rather than a second private one. Variation costs resolve the way WooCommerce resolves them, so the figures reconcile with WooCommerce's own analytics."}},{"@type":"Question","name":"Does ProfitGuard add another cost field?","acceptedAnswer":{"@type":"Answer","text":"No. It reads what the store already has: WooCommerce's own field when enabled, then a cost imported through ProfitGuard, then a known third-party cost-of-goods key. Third-party keys are read only."}},{"@type":"Question","name":"Does it send store data anywhere?","acceptedAnswer":{"@type":"Answer","text":"No. The plugin makes no external HTTP requests and contains no analytics or telemetry. Continuous integration proves this on every release by walking the PHP tokens of the shipped archive for outbound-request calls."}},{"@type":"Question","name":"Does it change prices?","acceptedAnswer":{"@type":"Answer","text":"No. It writes a cost only when an import is confirmed, and never changes a price, a product, or an order. The browser test re-reads every product price and order total after an import and fails the build if any of them moved."}}]}</script>
+</head>
+<body>
+  <header class="nav"><a class="brand" href="#top">Profit<span>Guard</span></a><nav><a href="#how">How it works</a><a href="#screens">Screens</a><a href="#faq">FAQ</a><a class="button small" href="https://github.com/kristijankopacevic/profitguard-for-woocommerce/releases">Free download</a></nav></header>
+  <main id="top">
+
+    <section class="hero">
+      <p class="eyebrow">WooCommerce margin and shipping profit</p>
+      <h1>Turn cost and carrier data into decisions.</h1>
+      <p class="lead">WooCommerce tells you what you sold. It does not tell you what you kept. ProfitGuard reads the cost data your store already holds, measures every product against the margin you were aiming for, and compares what your carrier billed against what the customer actually paid — then ranks what to fix by the amount of money at stake.</p>
+      <div class="actions">
+        <a class="button" href="https://github.com/kristijankopacevic/profitguard-for-woocommerce/releases">Download free</a>
+        <a class="text-link" href="#how">See what it checks <span>↓</span></a>
+      </div>
+      <p class="quiet">Free and staying free · GPLv2 or later · no account, no API key, no telemetry · runs entirely inside your own WordPress</p>
+    </section>
+
+    <section class="proof" aria-label="Design commitments">
+      <div><strong>Never invents a number</strong><span>No cost means "no cost", not zero.</span></div>
+      <div><strong>Coverage stated separately</strong><span>A score of 67 across 67% of your catalogue says both.</span></div>
+      <div><strong>Reads, does not replace</strong><span>Uses WooCommerce's own cost field when you have it on.</span></div>
+    </section>
+
+    <section class="section">
+      <p class="eyebrow">For stores that know revenue but not margin</p>
+      <h2>Cost capture is solved. Deciding what to do about it is not.</h2>
+      <p class="lead">Since WooCommerce 10.3, Cost of Goods Sold is part of WooCommerce itself — though it is switched off by default under WooCommerce → Settings → Advanced → Features. ProfitGuard does not add a competing cost field. It reads whichever cost data you already have, and spends its effort on the layer above: which products are quietly losing you money, how much, and which one to fix first.</p>
+    </section>
+
+    <section id="how" class="section">
+      <p class="eyebrow">What it checks</p>
+      <h2>From the data already in your store to a ranked list.</h2>
+      <ol class="steps">
+        <li><b>01</b><div><h3>Read the costs you have</h3><p>WooCommerce's own Cost of Goods Sold field when the feature is enabled, costs stored by other cost-of-goods plugins (read only), or costs you import from CSV. Variation costs resolve the way WooCommerce resolves them — inherited from the parent, replacing it, or added to it — so the figures reconcile with WooCommerce's own analytics.</p></div></li>
+        <li><b>02</b><div><h3>Measure against your target</h3><p>Set a target gross margin. Every product and variation with a price and a cost gets its current margin, markup, profit per unit, and the exact price that would reach the target. Products with no cost are counted and reported, not quietly dropped.</p></div></li>
+        <li><b>03</b><div><h3>Bring in the carrier invoice</h3><p>WooCommerce records what the customer paid for shipping. It cannot know what the carrier billed you weeks later, with fuel surcharges and weight corrections that did not exist at checkout. Import that invoice as CSV and ProfitGuard compares the two per order, and flags duplicate charges and rows that matched no order.</p></div></li>
+        <li><b>04</b><div><h3>Act on the biggest number first</h3><p>Every finding carries the amount of money at stake and is sorted by it, so the first row is the one worth your afternoon. Export the whole list as CSV.</p></div></li>
+      </ol>
+    </section>
+
+    <section class="section features">
+      <p class="eyebrow">All of it, permanently free</p>
+      <h2>No trial, no row limit, no feature that stops working.</h2>
+      <div class="grid">
+        <article><h3>Margin findings</h3><p>Low margin, critical margin, selling below cost, missing cost, sale-price margin risk, and supplier cost increases.</p></article>
+        <article><h3>Shipping profitability</h3><p>Per order: what the customer paid, what the carrier billed, and the difference — plus duplicate carrier charges and unmatched rows.</p></article>
+        <article><h3>Honest arithmetic</h3><p>Every amount is an integer number of minor units. No floating-point currency is ever stored, compared, or summed.</p></article>
+        <article><h3>No silent overwrites</h3><p>The import preview shows the current and new cost for every row, and refuses to replace a cost held in WooCommerce's own field unless you tick the box.</p></article>
+        <article><h3>Built for real stores</h3><p>High-Performance Order Storage compatible, background scanning through Action Scheduler, nothing running on your shop front end.</p></article>
+        <article><h3>Nothing leaves your server</h3><p>No external HTTP requests, no analytics, no telemetry. Uploaded CSVs are parsed and discarded, never written to your uploads directory.</p></article>
+      </div>
+    </section>
+
+    <section id="screens" class="section gallery">
+      <p class="eyebrow">Real interface screenshots</p>
+      <h2>Captured from the running plugin, never mocked up.</h2>
+      <p>Every image below is produced by the browser test that runs on each release: a fresh WordPress 7.1 with WooCommerce 11.1.0, a seeded store, and a real Profit Scan. The build fails if they cannot be produced.</p>
+      <div class="screens">
+        <figure><img src="screenshots/dashboard.png" alt="ProfitGuard dashboard showing the score, coverage, profit health and shipping health"><figcaption>The score, and how much of your store it is based on — stated separately, always.</figcaption></figure>
+        <figure><img src="screenshots/findings.png" alt="ProfitGuard product margin findings sorted by amount at stake"><figcaption>Margin findings sorted by the amount at stake, with the price that would reach your target.</figcaption></figure>
+        <figure><img src="screenshots/shipping.png" alt="ProfitGuard shipping findings comparing charged and actual carrier cost"><figcaption>What each customer paid for shipping against what the carrier actually billed.</figcaption></figure>
+        <figure><img src="screenshots/import-preview.png" alt="ProfitGuard cost import preview showing current and new cost per row"><figcaption>Before anything is saved: the current and the new cost for every row, and where the current one lives.</figcaption></figure>
+        <figure><img src="screenshots/overwrite-guard.png" alt="ProfitGuard refusing to replace a cost held in WooCommerce's own field without confirmation"><figcaption>A row that would replace a cost from WooCommerce's own field is left alone until you say otherwise.</figcaption></figure>
+        <figure><img src="screenshots/settings.png" alt="ProfitGuard settings showing target gross margin and retention"><figcaption>Target gross margin, scan retention, and what happens to your data if you delete the plugin.</figcaption></figure>
+      </div>
+    </section>
+
+    <section class="section roadmap">
+      <p class="eyebrow">Monetisation, stated plainly</p>
+      <h2>This plugin is free, and stays free.</h2>
+      <p>Everything described on this page is in the free plugin, permanently, with no upsell inside it. A separate paid add-on may follow later — but only after this one has been listed for ninety days, has real installs, and has had enough support conversations to know what is actually worth charging for. Until all three are true there is nothing to sell, and saying so now is more useful than a "Pro" badge on a feature that already works.</p>
+    </section>
+
+    <section id="faq" class="section faq">
+      <p class="eyebrow">FAQ</p>
+      <h2>Short answers.</h2>
+      <details><summary>Does it work with WooCommerce's built-in Cost of Goods Sold?</summary><p>Yes, and it prefers it. With the feature enabled ProfitGuard reads the native cost, and an import writes through WooCommerce's own API — so there is one cost field in the product editor rather than a second private one beside it. With the feature disabled, ProfitGuard does not write into it; it keeps its own cost data and tells you the setting exists.</p></details>
+      <details><summary>Why does it say most of my products have no cost?</summary><p>Because a cost has to come from somewhere and nothing has recorded one yet. WooCommerce's cost field is off by default, and enabling it does not fill it in. Turn it on, or import costs from a CSV with a SKU column and a cost column.</p></details>
+      <details><summary>Can it work out my shipping losses on its own?</summary><p>Only partly. WooCommerce knows what the customer paid and has no way of knowing what the carrier later charged. Import one carrier invoice and ProfitGuard does the rest. Until then it reports "no carrier cost imported" rather than estimating.</p></details>
+      <details><summary>Does it change anything in my store?</summary><p>It writes a cost only when you confirm an import, and it never changes a price, a product, or an order. The browser test re-reads every product price and order total after an import and fails the build if any of them moved.</p></details>
+      <details><summary>Which PHP versions are supported?</summary><p>The test suite runs on PHP 7.4, 8.1, 8.2, 8.3 and 8.4 on every release, and passes on all five.</p></details>
+      <details><summary>Where can I get support?</summary><p>Open an issue on <a href="https://github.com/kristijankopacevic/profitguard-for-woocommerce/issues">GitHub</a> with reproducible steps and a synthetic or redacted CSV. Please do not send real supplier or customer data.</p></details>
+    </section>
+
+  </main>
+  <footer>
+    <span>ProfitGuard for WooCommerce</span>
+    <a href="https://github.com/kristijankopacevic/profitguard-for-woocommerce">GitHub</a>
+    <a href="https://github.com/kristijankopacevic/profitguard-for-woocommerce/releases">Releases</a>
+    <a href="https://github.com/kristijankopacevic/profitguard-for-woocommerce/issues">Support</a>
+  </footer>
+</body>
+</html>
