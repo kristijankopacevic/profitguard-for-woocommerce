@@ -2,43 +2,10 @@
 /**
  * Where a product's cost comes from.
  *
- * WooCommerce 10.3 (October 2025) moved Cost of Goods Sold into core, so a
- * native cost field now exists - but it is OPT-IN and disabled by default,
- * under WooCommerce -> Settings -> Advanced -> Features. That gives three store
- * states, and cost has to be resolved differently in each:
- *
- *  1. WooCommerce older than 10.3. No native API. Read third-party COGS meta,
- *     then fall back to ProfitGuard's own key.
- *  2. WooCommerce 10.3+ with the feature DISABLED - the default, and so the
- *     common case. Do not write into a disabled feature's storage. Work
- *     exactly as in state 1, and tell the merchant the setting exists.
- *  3. WooCommerce 10.3+ with the feature ENABLED. Prefer and reuse the native
- *     value, and write through set_cogs_value() rather than a parallel private
- *     key - two disagreeing cost figures in the product editor are worse for
- *     a merchant than a single one they can trust.
- *
- * PRECEDENCE, and the fact that it changed. Before native COGS existed,
- * ProfitGuard's own key always won. Now, when the feature is enabled, the
- * NATIVE value wins, because it is the value the merchant sees and edits in
- * WooCommerce itself; ProfitGuard silently overriding the field shown in the
- * product editor is the confusing outcome. A store holding both a native cost
- * and an older ProfitGuard cost will therefore report the native one - a
- * deliberate behaviour change, recorded in the changelog rather than slipped in.
- *
- * Several third-party plugins each invented their own meta key, and reading
- * them is still a genuine kindness for the many stores in states 1 and 2 - a
- * merchant who already has costs there should not have to re-enter them - but
- * it has to be done carefully:
- *
- *  - Foreign keys are READ ONLY. ProfitGuard never writes to another plugin's
- *    meta. Writing there would corrupt their data and would survive
- *    ProfitGuard being uninstalled.
- *  - A foreign value is parsed with the strict decimal parser and rejected if
- *    it is not a plain number, because we do not know what conventions another
- *    plugin stores.
- *
- * The list is filterable so a merchant or a future add-on can teach it a key
- * without patching the plugin.
+ * WooCommerce 10.3 put Cost of Goods Sold into core, but it is opt-in and off
+ * by default, so cost has to be resolved across three different store states.
+ * Those states, the precedence between cost sources, and why the precedence
+ * changed are documented on the class below.
  *
  * @package ProfitGuard
  */
@@ -77,6 +44,43 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Resolves a cost for a product or variation.
+ *
+ * THREE STORE STATES. WooCommerce 10.3 (October 2025) moved Cost of Goods Sold
+ * into core, so a native cost field now exists - but it is OPT-IN and disabled
+ * by default, under WooCommerce -> Settings -> Advanced -> Features:
+ *
+ *  1. WooCommerce older than 10.3. No native API. Read third-party COGS meta,
+ *     then fall back to ProfitGuard's own key.
+ *  2. WooCommerce 10.3+ with the feature DISABLED - the default, and so the
+ *     common case. Do not write into a disabled feature's storage. Work
+ *     exactly as in state 1, and tell the merchant the setting exists.
+ *  3. WooCommerce 10.3+ with the feature ENABLED. Prefer and reuse the native
+ *     value, and write through set_cogs_value() rather than a parallel private
+ *     key - two disagreeing cost figures in the product editor are worse for a
+ *     merchant than a single one they can trust.
+ *
+ * PRECEDENCE, and the fact that it changed. Before native COGS existed,
+ * ProfitGuard's own key always won. Now, when the feature is enabled, the
+ * NATIVE value wins, because it is the value the merchant sees and edits in
+ * WooCommerce itself; ProfitGuard silently overriding the field shown in the
+ * product editor is the confusing outcome. A store holding both a native cost
+ * and an older ProfitGuard cost will therefore report the native one - a
+ * deliberate behaviour change, recorded in the changelog rather than slipped in.
+ *
+ * THIRD-PARTY KEYS. Several plugins each invented their own, and reading them
+ * is still a genuine kindness for the many stores in states 1 and 2 - a
+ * merchant who already has costs there should not have to re-enter them - but
+ * it has to be done carefully:
+ *
+ *  - Foreign keys are READ ONLY. ProfitGuard never writes to another plugin's
+ *    meta. Writing there would corrupt their data and would survive
+ *    ProfitGuard being uninstalled.
+ *  - A foreign value is parsed with the strict decimal parser and rejected if
+ *    it is not a plain number, because we do not know what conventions another
+ *    plugin stores.
+ *
+ * The list is filterable so a merchant or a future add-on can teach it a key
+ * without patching the plugin.
  */
 final class CostProvider {
 

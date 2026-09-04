@@ -2,6 +2,29 @@
 /**
  * WooCommerce's own Cost of Goods Sold feature.
  *
+ * Added to core in WooCommerce 10.3, but opt-in and disabled by default, so
+ * most stores still have no cost data - which is why ProfitGuard's
+ * missing-cost detection stays useful. The three measured API facts that shape
+ * this class are documented on the class below.
+ *
+ * @package ProfitGuard
+ */
+
+declare(strict_types=1);
+
+namespace ProfitGuard\Woo;
+
+use ProfitGuard\Core\CogsResolution;
+use ProfitGuard\Core\Money;
+use Throwable;
+use WC_Abstract_Order;
+use WC_Product;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Reads and writes cost through WooCommerce's native COGS API.
+ *
  * WooCommerce 10.3 (October 2025) moved Cost of Goods Sold out of experimental
  * and into core. So a cost field now exists - but it is OPT-IN, disabled by
  * default, under WooCommerce -> Settings -> Advanced -> Features. Most stores
@@ -30,22 +53,6 @@
  *     disabled feature's storage.
  *
  * @package ProfitGuard
- */
-
-declare(strict_types=1);
-
-namespace ProfitGuard\Woo;
-
-use ProfitGuard\Core\CogsResolution;
-use ProfitGuard\Core\Money;
-use Throwable;
-use WC_Abstract_Order;
-use WC_Product;
-
-defined( 'ABSPATH' ) || exit;
-
-/**
- * Reads and writes cost through WooCommerce's native COGS API.
  */
 final class NativeCogs {
 
