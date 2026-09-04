@@ -124,9 +124,22 @@ wp() {
 wp core install --url="http://127.0.0.1:${PG_PORT}" --title='ProfitGuard test' \
   --admin_user=admin --admin_password=password --admin_email=admin@example.test --skip-email
 
-# Pin WordPress to the version readme.txt claims, then assert it took.
-wp core update --version="${WP_VERSION}" --force --skip-plugins --skip-themes
-wp core update-db
+# Pin WordPress to the version readme.txt claims.
+#
+# Only update when the version actually DIFFERS. `wp core update --force`
+# re-copies core even when it is already the wanted version, and wp-admin is
+# not writable by the CLI container, so a needless re-copy fails with
+# "Permission denied ... update-core.php". The image currently ships the
+# wanted version already; the assertion below is what pins it, and the update
+# is the fallback for when the image drifts.
+current_wp="$(wp core version | tr -d '\r')"
+if [ "${current_wp}" != "${WP_VERSION}" ]; then
+  echo "  image ships WordPress ${current_wp}; moving to ${WP_VERSION}"
+  docker exec pg-wp sh -c 'chmod -R a+w /var/www/html'
+  wp core update --version="${WP_VERSION}" --force --skip-plugins --skip-themes
+  wp core update-db
+fi
+
 actual_wp="$(wp core version | tr -d '\r')"
 echo "  WordPress: ${actual_wp}"
 [ "${actual_wp}" = "${WP_VERSION}" ] || { echo "ERROR: wanted WordPress ${WP_VERSION}, got ${actual_wp}." >&2; exit 1; }
