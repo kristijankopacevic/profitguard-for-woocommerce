@@ -14,7 +14,14 @@ jobs:
           php-version: '8.2'
           tools: composer
       - run: composer install --no-interaction --prefer-dist -q
-      - name: Which sniffs are failing, and how often
-        run: vendor/bin/phpcs --report=source --parallel=1 . 2>&1 | tail -40 || true
-      - name: Full report for the offending files
-        run: vendor/bin/phpcs --report=full --parallel=1 --report-width=120 . 2>&1 | head -220 || true
+      - name: Write reports to files
+        run: |
+          mkdir -p reports
+          vendor/bin/phpcs --report=source --parallel=1 --no-colors . > reports/source.txt 2>&1 || true
+          vendor/bin/phpcs --report=full --parallel=1 --no-colors --report-width=110 . > reports/full.txt 2>&1 || true
+          echo "--- source ---"; cat reports/source.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phpcs-reports
+          path: reports/
