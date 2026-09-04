@@ -34,7 +34,6 @@ defined( 'ABSPATH' ) || exit;
  * rather than disabled globally, so a genuinely unprepared VALUE anywhere else
  * still fails the build.
  */
-// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 /**
  * Data access for findings, carrier rows and run history.
@@ -347,11 +346,11 @@ final class Repository {
 		$page     = max( 1, (int) ( $args['page'] ?? 1 ) );
 		$offset   = ( $page - 1 ) * $per_page;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $where_sql is built from a fixed set of placeholders; values are bound below.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $where_sql holds the placeholders, so the sniff cannot see them in the literal. It is seeded unconditionally with 'scan_id = %d' and $params with $scan_id, so there is always at least one placeholder and exactly one bound value per placeholder.
 		$total = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}", ...$params ) );
 
 		$query_params = array_merge( $params, array( $per_page, $offset ) );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $where_sql and $order_sql come from fixed literals/whitelist; values are bound.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- $order_sql comes from a fixed whitelist and $where_sql from fixed literals. The sniff counts the spread ...$query_params as a single replacement and so reports 1 where it wants 2; $query_params is $params plus per_page and offset, which is exactly one value per placeholder.
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM {$table} WHERE {$where_sql} ORDER BY {$order_sql} LIMIT %d OFFSET %d",
@@ -497,7 +496,7 @@ final class Repository {
 		$table        = Database::carrier_table();
 		$placeholders = implode( ',', array_fill( 0, count( $order_ids ), '%d' ) );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Placeholders generated from a count; values bound.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $placeholders holds one %d per id, so the sniff cannot see them in the literal. The function returns early on an empty list and every id is intval-cast, so $placeholders is never empty and each %d has exactly one bound integer.
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT order_id,
@@ -618,5 +617,3 @@ final class Repository {
 		return is_array( $decoded ) ? $decoded : array();
 	}
 }
-
-// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared

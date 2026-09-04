@@ -8,7 +8,7 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Turn WooCommerce cost and carrier data into actionable margin and shipping-profit insights. All analysis runs locally in your own WordPress installation.
+Turn WooCommerce cost and carrier data into actionable margin and shipping-profit insights. All analysis runs locally in your own store.
 
 == Description ==
 
