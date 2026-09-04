@@ -132,6 +132,12 @@ jobs:
           name: profitguard-for-woocommerce
           path: dist
 
+      # The outbound-request checker is a plain CLI script over the extracted
+      # ZIP, so it needs a PHP that does not depend on the runner image.
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+
       - name: Fresh WordPress + WooCommerce, Plugin Check, HPOS, real scan
         env:
           PG_COGS: ${{ matrix.cogs }}

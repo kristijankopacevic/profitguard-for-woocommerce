@@ -69,20 +69,12 @@ else
   python3 -c "import zipfile,sys; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])" "${ZIP_PATH}" dist/_verify
 fi
 
-# Any of these in shipped code would make the privacy sentence false.
-forbidden='wp_remote_|curl_init|curl_exec|curl_setopt|fsockopen|stream_socket_client|pfsockopen|file_get_contents[[:space:]]*\([[:space:]]*.?https?:'
-if grep -rnE "${forbidden}" dist/_verify --include='*.php'; then
-  echo "ERROR: shipped code contains an outbound-request primitive, so readme.txt's privacy claim is false." >&2
-  exit 1
-fi
-echo "  no outbound-request primitives in shipped PHP"
+# Tokenized, not grepped. The grep version of this check failed the build on a
+# COMMENT in Import/Importer.php explaining why wp_remote_get() is NOT used - a
+# check guarding a trust claim must not be decided by prose.
+php tests/assert-no-outbound-requests.php dist/_verify
 
-# file_get_contents is permitted, but only on a local path. Show every use so a
-# reviewer can see what they are.
-echo "  file_get_contents uses in shipped code:"
-grep -rn "file_get_contents" dist/_verify --include='*.php' || echo "    none"
-
-# And no analytics/telemetry endpoints hiding in a string.
+# Analytics endpoints hiding in a string literal.
 if grep -rnE "google-analytics|googletagmanager|segment\.(io|com)|mixpanel|sentry\.io|plausible|matomo|amplitude" dist/_verify; then
   echo "ERROR: shipped code references an analytics endpoint." >&2
   exit 1

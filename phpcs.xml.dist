@@ -181,11 +181,13 @@
 	</rule>
 
 	<!--
-		tests/cogs/ is CI-only probe tooling: PHP snippets run through
-		`wp eval-file` against a throwaway WordPress in GitHub Actions, to
-		measure what WooCommerce's native COGS API actually does. NONE of it
-		ships - bin/build-zip.sh copies an allow-list that excludes tests/
-		entirely - and it never runs on a merchant's site.
+		tests/cogs/ and tests/assert-*.php are CI-only verification tooling:
+		PHP run through `wp eval-file` against a throwaway WordPress, or as a
+		plain CLI script over the extracted ZIP, to measure what WooCommerce's
+		native COGS API actually does and to prove the shipped code cannot make
+		an outbound request. NONE of it ships - bin/build-zip.sh copies an
+		allow-list that excludes tests/ entirely - and it never runs on a
+		merchant's site.
 
 		The exclusions below are the same ones bin/ already needs, for the same
 		reasons, and each is wrong for this file type specifically rather than
@@ -198,6 +200,7 @@
 			tell us nothing about the API.
 		-->
 		<exclude-pattern>/tests/cogs/*</exclude-pattern>
+		<exclude-pattern>/tests/assert-*.php</exclude-pattern>
 	</rule>
 	<rule ref="WordPress.PHP.DevelopmentFunctions">
 		<!--
@@ -206,6 +209,7 @@
 			probes exist to establish.
 		-->
 		<exclude-pattern>/tests/cogs/*</exclude-pattern>
+		<exclude-pattern>/tests/assert-*.php</exclude-pattern>
 	</rule>
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<!--
@@ -215,10 +219,23 @@
 			make the measurements harder to read, for no collision risk.
 		-->
 		<exclude-pattern>/tests/cogs/*</exclude-pattern>
+		<exclude-pattern>/tests/assert-*.php</exclude-pattern>
 	</rule>
 	<rule ref="WordPress.WP.GlobalVariablesOverride">
 		<!-- Same cause: global scope is an artefact of eval-file, not a design. -->
 		<exclude-pattern>/tests/cogs/*</exclude-pattern>
+		<exclude-pattern>/tests/assert-*.php</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.WP.AlternativeFunctions">
+		<!--
+			WP_Filesystem exists so a PLUGIN can write through a user's FTP or
+			SSH credentials. A CLI script reading a local sample CSV, or walking
+			an extracted ZIP it created a moment ago, has no such indirection to
+			respect - and cannot: WordPress is not loaded in the ZIP checker at
+			all.
+		-->
+		<exclude-pattern>/tests/cogs/*</exclude-pattern>
+		<exclude-pattern>/tests/assert-*.php</exclude-pattern>
 	</rule>
 
 	<!--
