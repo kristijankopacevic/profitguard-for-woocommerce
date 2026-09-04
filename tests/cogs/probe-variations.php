@@ -93,3 +93,44 @@ printf(
 	var_export( $fresh_bare->get_cogs_value(), true ),
 	var_export( $fresh_bare->get_cogs_effective_value(), true )
 );
+
+/*
+ * The remaining question: does core resolve the parent default, or the additive
+ * flag, when it builds an ORDER ITEM? The product getters do neither. If core
+ * does it here and ProfitGuard also does it at product level, the two agree;
+ * if core does not, ProfitGuard's product-level margin and WooCommerce's own
+ * analytics disagree on every variable product. Only an order of an actual
+ * VARIATION answers it - the earlier probe ordered a simple product.
+ */
+foreach ( array( 'VPROBE-NONE-DEFAULT', 'VPROBE-OWN-ADDITIVE', 'VPROBE-OWN-REPLACE' ) as $sku ) {
+	$variation_id = (int) wc_get_product_id_by_sku( $sku );
+	if ( $variation_id <= 0 ) {
+		printf( "ORDERVAR %s SKU_NOT_FOUND\n", $sku );
+		continue;
+	}
+
+	$order = wc_create_order();
+	$order->add_product( wc_get_product( $variation_id ), 2 );
+	$order->calculate_totals();
+	$order->save();
+
+	$has_cogs = $order->has_cogs();
+	if ( $has_cogs ) {
+		$order->calculate_cogs_total_value();
+		$order->save();
+	}
+
+	$fresh = wc_get_order( $order->get_id() );
+	$item_values = array();
+	foreach ( $fresh->get_items() as $item ) {
+		$item_values[] = var_export( $item->get_cogs_value(), true );
+	}
+
+	printf(
+		"ORDERVAR %-22s qty=2 has_cogs=%-5s order_total=%-6s items=[%s]\n",
+		$sku,
+		var_export( $has_cogs, true ),
+		var_export( $fresh->get_cogs_total_value(), true ),
+		implode( ',', $item_values )
+	);
+}
