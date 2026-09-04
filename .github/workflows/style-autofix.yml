@@ -22,9 +22,20 @@ jobs:
       - run: composer install --no-interaction --prefer-dist
       - run: composer exec phpcbf -- -p
         continue-on-error: true
+      # Written to files and uploaded: scraping a PHPCS report out of the
+      # Actions log loses it to ANSI codes and line-prefixing.
       - name: Report what is left for a human
-        run: composer exec phpcs -- --report=summary --parallel=1
-        continue-on-error: true
+        run: |
+          mkdir -p reports
+          composer exec phpcs -- --report=source --parallel=1 --no-colors > reports/source.txt 2>&1 || true
+          composer exec phpcs -- --report=full --parallel=1 --no-colors --report-width=110 > reports/full.txt 2>&1 || true
+          cat reports/source.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phpcs-reports
+          path: reports/
       - name: Commit safe formatter output
         run: |
           git config user.name "github-actions[bot]"
