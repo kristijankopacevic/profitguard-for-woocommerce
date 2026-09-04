@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       ProfitGuard for WooCommerce
  * Plugin URI:        https://github.com/kristijankopacevic/marginguard-ai
- * Description:       Find low-margin products and shipping losses inside WooCommerce. All analysis runs locally in your WordPress installation.
+ * Description:       Turn WooCommerce cost and carrier data into actionable margin and shipping-profit insights. All analysis runs locally in your WordPress installation.
  * Version:           1.0.0
  * Requires at least: 6.4
  * Requires PHP:      7.4
@@ -15,7 +15,7 @@
  * Requires Plugins:  woocommerce
  *
  * WC requires at least: 8.0
- * WC tested up to:      11.0
+ * WC tested up to:      11.1
  *
  * @package ProfitGuard
  */

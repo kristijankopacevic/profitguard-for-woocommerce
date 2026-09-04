@@ -1,0 +1,201 @@
+name: Verify and release
+
+# Every check that readme.txt makes a claim about runs here, because there is
+# no PHP, Composer or working Docker daemon on the machine this plugin is
+# developed on. CI is not a second opinion; it is the only opinion.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # readme.txt: "The test suite is run on PHP 7.4, 8.1, 8.2, 8.3 and 8.4, and
+  # passes identically on all of them." That is a claim about five runtimes, so
+  # it takes five runtimes to support it.
+  # ---------------------------------------------------------------------------
+  static:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.1', '8.2', '8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer
+      - run: composer install --no-interaction --prefer-dist
+
+      - name: PHP syntax, every file
+        run: |
+          fail=0
+          while IFS= read -r -d '' f; do
+            php -l "$f" >/dev/null || { echo "SYNTAX FAIL: $f"; fail=1; }
+          done < <(find . -path ./vendor -prune -o -name '*.php' -print0)
+          exit $fail
+
+      - name: PHPUnit
+        run: vendor/bin/phpunit --configuration phpunit.xml.dist
+
+      # One runtime is enough for a coding standard: the ruleset is the same
+      # everywhere, and running it five times only multiplies the output.
+      - name: PHPCS
+        if: matrix.php == '8.2'
+        run: vendor/bin/phpcs --parallel=1
+
+  # ---------------------------------------------------------------------------
+  # Build the ZIP once, and assert what is and is not inside it.
+  # ---------------------------------------------------------------------------
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer
+
+      # bin/build-zip.sh is reused rather than reimplemented: it already
+      # enforces an allow-list, and bin/build-release.sh already refuses a
+      # header Version that disagrees with readme.txt's Stable tag.
+      - name: Build the distributable ZIP
+        run: bash bin/build-zip.sh
+
+      - name: Header version must agree with the readme stable tag
+        run: bash bin/build-release.sh
+
+      - name: Assert the archive contains only what should ship
+        run: |
+          ZIP=dist/profitguard-for-woocommerce.zip
+          unzip -l "$ZIP"
+
+          # The single top-level directory must be the plugin slug, and the
+          # main plugin file must be at its root, or WordPress unpacks it wrong.
+          test "$(unzip -Z1 "$ZIP" | grep -c '^profitguard-for-woocommerce/profitguard-for-woocommerce\.php$')" = 1
+          test "$(unzip -Z1 "$ZIP" | grep -c '^profitguard-for-woocommerce/readme\.txt$')" = 1
+          test "$(unzip -Z1 "$ZIP" | grep -c '^profitguard-for-woocommerce/uninstall\.php$')" = 1
+          test "$(unzip -Z1 "$ZIP" | grep -c '^profitguard-for-woocommerce/LICENSE$')" = 1
+
+          # Nothing developmental may ship. Each of these is a file a reviewer
+          # would have to read and an attacker could probe.
+          if unzip -Z1 "$ZIP" | grep -E '/(tests|vendor|node_modules|bin|samples|assets-src|assets-wporg|release)/'; then
+            echo "ERROR: a development directory reached the archive." >&2; exit 1
+          fi
+          if unzip -Z1 "$ZIP" | grep -E '(^|/)(\.git|\.github|composer\.json|composer\.lock|phpunit\.xml\.dist|phpcs\.xml\.dist|docker-compose.*|\.wp-env\.json)$'; then
+            echo "ERROR: a development file reached the archive." >&2; exit 1
+          fi
+          echo "archive contents are exactly the allow-list"
+
+      - name: SHA-256
+        run: |
+          cd dist
+          sha256sum profitguard-for-woocommerce.zip > profitguard-for-woocommerce.zip.sha256
+          cat profitguard-for-woocommerce.zip.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: profitguard-for-woocommerce
+          path: |
+            dist/profitguard-for-woocommerce.zip
+            dist/profitguard-for-woocommerce.zip.sha256
+
+  # ---------------------------------------------------------------------------
+  # The plugin, installed from the built ZIP, in a real store. Twice: WooCommerce
+  # native COGS is opt-in, so both states are states real merchants are in, and
+  # the fallback path is the one MOST stores will take.
+  # ---------------------------------------------------------------------------
+  live:
+    name: Live store, native COGS ${{ matrix.cogs }}
+    needs: package
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cogs: 'on'
+            port: '8092'
+          - cogs: 'off'
+            port: '8093'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: profitguard-for-woocommerce
+          path: dist
+
+      - name: Fresh WordPress + WooCommerce, Plugin Check, HPOS, real scan
+        env:
+          PG_COGS: ${{ matrix.cogs }}
+          PG_PORT: ${{ matrix.port }}
+          PG_KEEP_CONTAINERS: 1
+        run: bash tests/fresh-install.sh
+
+      - name: Browser smoke and real screenshots
+        env:
+          PG_COGS: ${{ matrix.cogs }}
+          PG_PORT: ${{ matrix.port }}
+        run: |
+          npm install --no-save playwright@1.50.1
+          npx playwright install --with-deps chromium
+          node tests/browser-smoke.js
+
+      - name: Tear down
+        if: always()
+        run: |
+          docker rm -f pg-wp pg-db || true
+          docker network rm pg-test || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: real-screenshots-cogs-${{ matrix.cogs }}
+          path: screenshots/**/*.png
+          if-no-files-found: warn
+
+  # ---------------------------------------------------------------------------
+  # A tag publishes. Nothing publishes without every job above being green.
+  # ---------------------------------------------------------------------------
+  release:
+    needs: [static, package, live]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: profitguard-for-woocommerce
+          path: dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            ## Install
+
+            Download `profitguard-for-woocommerce.zip`, then use
+            **Plugins → Add New → Upload Plugin** on a WordPress site with
+            WooCommerce active.
+
+            The SHA-256 of the archive is attached as
+            `profitguard-for-woocommerce.zip.sha256`.
+
+            ## Verified in CI for this tag
+
+            - PHPUnit on PHP 7.4, 8.1, 8.2, 8.3 and 8.4
+            - WordPress Coding Standards, zero errors
+            - WordPress.org Plugin Check, zero errors
+            - Installed from this exact ZIP into a fresh WordPress + WooCommerce
+            - HPOS compatibility declared and registered at runtime
+            - No outbound-request primitives anywhere in the shipped code
+            - Browser smoke run twice: with WooCommerce's native Cost of Goods
+              Sold feature enabled, and with it disabled
+          files: |
+            dist/profitguard-for-woocommerce.zip
+            dist/profitguard-for-woocommerce.zip.sha256

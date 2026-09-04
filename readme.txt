@@ -8,7 +8,7 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Find low-margin products and shipping losses inside WooCommerce. All analysis runs locally in your own WordPress installation.
+Turn WooCommerce cost and carrier data into actionable margin and shipping-profit insights. All analysis runs locally in your own WordPress installation.
 
 == Description ==
 
@@ -22,36 +22,73 @@ put, and orders where the carrier charged more than the customer paid.
 Everything runs inside your own WordPress installation. There is no account to
 create, no API key, no external service, and no subscription.
 
+= It uses the cost data you already have =
+
+Since WooCommerce 10.3, Cost of Goods Sold is part of WooCommerce itself,
+though it is switched off by default under WooCommerce -> Settings -> Advanced
+-> Features. ProfitGuard does not add a competing cost field. It reads
+whichever cost data your store already holds:
+
+* **WooCommerce's own Cost of Goods Sold field**, when you have the feature
+  enabled. ProfitGuard reads it, and imports write back through it, so you see
+  one cost in the product editor rather than two that disagree. Variation costs
+  that inherit from the parent product, or add to it, are resolved the same way
+  WooCommerce resolves them, so ProfitGuard's figures reconcile with
+  WooCommerce's own analytics instead of quietly differing.
+* **Costs stored by other cost-of-goods plugins**, read only. ProfitGuard never
+  writes to another plugin's data.
+* **Costs you import yourself**, when there is nothing else to read.
+
 = What it checks =
 
 **Margins.** Every product and variation with a price and a cost is measured
 against a target gross margin you set. ProfitGuard shows the current margin, the
 markup, the profit per unit, and the exact price that would reach your target.
 
-**Products with no cost.** WooCommerce has no cost field of its own, so most
-stores have costs for some products and not others. ProfitGuard tells you
-exactly how many are missing rather than quietly leaving them out of the
-figures, and it reads costs already stored by several popular cost-of-goods
-plugins so you may not have to re-enter them.
+**Products with no cost.** Cost of Goods Sold is off by default and rarely
+filled in for a whole catalogue, so most stores have costs for some products
+and not others. ProfitGuard tells you exactly how many are missing, and reports
+coverage separately, rather than quietly leaving them out of the figures or
+counting an absent cost as zero.
 
 **Shipping.** WooCommerce records what your customer paid for shipping. It
-cannot know what your carrier eventually billed you — that arrives weeks later
+cannot know what your carrier eventually billed you - that arrives weeks later
 on an invoice, with fuel surcharges and weight corrections that did not exist at
 checkout. Import a carrier invoice as CSV and ProfitGuard compares the two per
 order, and flags duplicate charges and rows that matched no order.
+
+= What it does that a cost field does not =
+
+Capturing a cost is now something WooCommerce and several plugins all do.
+ProfitGuard is the layer above that:
+
+* margin analysis against a target gross margin you choose
+* recommended selling price, markup and profit per unit
+* findings for low margin, selling below cost, missing cost, sale-price margin
+  risk and supplier cost increases
+* cost coverage and missing-cost detection, reported separately from the score
+* carrier cost import matched to orders
+* order-level shipping profitability, charged against actual carrier cost
+* duplicate carrier charges and carrier rows that matched no order
+* the ProfitGuard Score, with the share of your store it covers stated beside it
+* every finding prioritised by the amount of money at stake
 
 = What it will not do =
 
 It will not invent a number. If a product has no cost, ProfitGuard says so
 instead of showing a margin. If an order has no imported carrier cost,
 ProfitGuard says so instead of estimating a shipping loss. Every figure is
-labelled with what kind of claim it is — a confirmed calculation, a difference
+labelled with what kind of claim it is - a confirmed calculation, a difference
 evidenced by two documents you supplied, or missing data.
 
 The ProfitGuard Score works the same way. Categories with no data are left out
 of the score rather than scored zero, and coverage is reported separately, so a
 score of 78 across 34% of your orders is never presented as a score across all
 of them.
+
+It will not change a price, a product, or an order. It writes a cost only when
+you confirm an import, and an import that would replace a cost already held in
+WooCommerce's own field shows you the current and the new value and asks first.
 
 = Free, and staying free =
 
@@ -83,10 +120,33 @@ Import data.
 
 = Why does it say most of my products have no cost? =
 
-Because WooCommerce has no cost field, so unless you or another plugin has
-recorded one, there is nothing to calculate a margin from. Add costs by
-importing a CSV with a SKU column and a cost column under Import data.
-ProfitGuard also reads costs stored by several common cost-of-goods plugins.
+Because a cost has to come from somewhere, and nothing has recorded one yet.
+WooCommerce does have a Cost of Goods Sold field since version 10.3, but it is
+switched off by default, and enabling it does not fill it in. Turn it on under
+WooCommerce -> Settings -> Advanced -> Features and ProfitGuard will read and
+write it; or import costs from a CSV with a SKU column and a cost column under
+Import data. ProfitGuard also reads costs already stored by several common
+cost-of-goods plugins, so you may not have to re-enter them.
+
+= Does it work with WooCommerce's built-in Cost of Goods Sold? =
+
+Yes, and it prefers it. With the feature enabled ProfitGuard reads the native
+cost, and an import writes through WooCommerce's own API, so there is one cost
+field in the product editor rather than a second private one beside it.
+Variation costs are resolved the way WooCommerce resolves them - inherited from
+the parent product, replacing it, or added to it - so ProfitGuard's margins
+reconcile with WooCommerce's own analytics.
+
+With the feature disabled, ProfitGuard does not write into it. It keeps its own
+cost data and tells you the setting exists and what turning it on would give
+you.
+
+= Does ProfitGuard add another cost field? =
+
+No. Adding a fourth place a cost might live is the opposite of useful.
+ProfitGuard reads what your store already has, in this order: WooCommerce's own
+field when enabled, then a cost you imported through ProfitGuard, then a known
+third-party cost-of-goods key. Third-party keys are read only.
 
 = Can it work out my shipping losses on its own? =
 
@@ -144,7 +204,7 @@ will not invent one.
 1. The ProfitGuard dashboard: the score, how much of your store it covers, profit health and shipping health.
 2. Product margin findings, sorted by the amount at stake, with the current price, the price that would reach your target, and the difference.
 3. Shipping findings: what each customer paid for shipping against what the carrier actually billed, including duplicate carrier charges.
-4. Importing product costs from CSV. The detected column mapping and the first rows are shown before anything is saved.
+4. Importing product costs from CSV. The detected column mapping, and the current and new cost for every row, are shown before anything is saved.
 5. Importing a carrier invoice. Optional columns you do not have are marked "not in this file" rather than guessed.
 6. Settings: target gross margin, scan history retention, store currency, and what happens on uninstall.
 
@@ -152,6 +212,22 @@ will not invent one.
 
 = 1.0.0 =
 * First release.
+* Reads WooCommerce's own Cost of Goods Sold field when the feature is enabled,
+  and writes imported costs back through it, so there is one cost field in the
+  product editor rather than a second private one.
+* Variation costs resolve the way WooCommerce resolves them - inherited from the
+  parent, replacing it, or added to it - so figures reconcile with WooCommerce's
+  own analytics.
+* Nothing is written into Cost of Goods Sold while the feature is disabled; the
+  plugin says the setting exists and keeps using its own cost data.
+* Cost precedence, where a store has more than one source: WooCommerce's native
+  field when enabled, then a cost imported through ProfitGuard, then a known
+  third-party cost-of-goods key. A store holding both a native cost and an older
+  ProfitGuard cost reports the native one, because that is the value shown in the
+  product editor.
+* The cost import preview shows the current and the new value for every row, and
+  refuses to replace a cost already held in WooCommerce's own field unless you
+  confirm it.
 * Margin analysis for products and variations against a target gross margin.
 * Recommended selling price, markup and profit per unit.
 * Findings for low margin, critical margin, selling below cost, missing cost,
