@@ -1,0 +1,76 @@
+name: COGS API probe
+
+# Introspects the REAL WooCommerce COGS surface on a live install, so the
+# native-COGS integration is written against measured facts rather than docs.
+# Also reports the true latest WordPress version, which is how the readme's
+# "Tested up to" claim gets checked instead of trusted.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cogs-probe.yml'
+      - 'tests/cogs/**'
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stand up WordPress and WooCommerce
+        run: |
+          docker network create pg-probe
+          docker run -d --name pg-db --network pg-probe \
+            -e MARIADB_DATABASE=wordpress -e MARIADB_USER=wordpress \
+            -e MARIADB_PASSWORD=wordpress -e MARIADB_ROOT_PASSWORD=root mariadb:11
+          docker run -d --name pg-wp --network pg-probe -p 8091:80 \
+            -e WORDPRESS_DB_HOST=pg-db:3306 -e WORDPRESS_DB_USER=wordpress \
+            -e WORDPRESS_DB_PASSWORD=wordpress -e WORDPRESS_DB_NAME=wordpress \
+            -v "$GITHUB_WORKSPACE/tests:/tmp/pgtests:ro" \
+            wordpress:php8.3-apache
+          for i in $(seq 1 40); do
+            curl -fsS http://127.0.0.1:8091/wp-admin/install.php >/dev/null && break
+            sleep 3
+          done
+          curl -fsS http://127.0.0.1:8091/wp-admin/install.php >/dev/null
+          docker exec pg-wp sh -c 'mkdir -p /var/www/html/wp-content/upgrade /var/www/html/wp-content/uploads; chmod -R 777 /var/www/html/wp-content'
+
+      - name: Install core and WooCommerce, report versions
+        run: |
+          source .github/wp-helper.sh
+          wp core install --url=http://127.0.0.1:8091 --title=probe --admin_user=admin \
+            --admin_password=password --admin_email=admin@example.test --skip-email
+          echo "=== WORDPRESS VERSION (readme claims Tested up to 7.1) ==="
+          wp core version
+          wp plugin install woocommerce --activate
+          echo "=== WOOCOMMERCE VERSION (plan says current stable is 11.1.0) ==="
+          wp plugin get woocommerce --field=version
+
+      - name: Introspect the COGS API, feature still at its default
+        run: |
+          source .github/wp-helper.sh
+          echo "=== DEFAULT STATE (expected: disabled) ==="
+          wp eval-file /tmp/pgtests/cogs/probe-introspect.php
+
+      - name: Enable the feature and round-trip product, variations, order
+        run: |
+          source .github/wp-helper.sh
+          wp option update woocommerce_feature_cost_of_goods_sold_enabled yes
+          echo "=== AFTER ENABLING ==="
+          wp eval-file /tmp/pgtests/cogs/probe-introspect.php
+          echo "=== ROUND TRIP ==="
+          wp eval-file /tmp/pgtests/cogs/probe-roundtrip.php
+
+      - name: Disable again and see what the fallback must cope with
+        run: |
+          source .github/wp-helper.sh
+          wp option update woocommerce_feature_cost_of_goods_sold_enabled no
+          wp eval-file /tmp/pgtests/cogs/probe-fallback.php
+
+      - name: Tear down
+        if: always()
+        run: |
+          docker rm -f pg-wp pg-db || true
+          docker network rm pg-probe || true
