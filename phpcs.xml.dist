@@ -181,6 +181,47 @@
 	</rule>
 
 	<!--
+		tests/cogs/ is CI-only probe tooling: PHP snippets run through
+		`wp eval-file` against a throwaway WordPress in GitHub Actions, to
+		measure what WooCommerce's native COGS API actually does. NONE of it
+		ships - bin/build-zip.sh copies an allow-list that excludes tests/
+		entirely - and it never runs on a merchant's site.
+
+		The exclusions below are the same ones bin/ already needs, for the same
+		reasons, and each is wrong for this file type specifically rather than
+		being waved away.
+	-->
+	<rule ref="WordPress.Security.EscapeOutput">
+		<!--
+			The whole point of a probe is to print measured values to a CI log.
+			esc_html() on a printf of a var_export would escape the evidence and
+			tell us nothing about the API.
+		-->
+		<exclude-pattern>/tests/cogs/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.PHP.DevelopmentFunctions">
+		<!--
+			var_export IS the measurement: it is the only way to see 'NULL'
+			apart from '0.0' in a log, and that exact distinction is what the
+			probes exist to establish.
+		-->
+		<exclude-pattern>/tests/cogs/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<!--
+			`wp eval-file` includes the script at GLOBAL scope, so every
+			ordinary local is technically a global - identical to the bin/
+			situation above. Prefixing probe locals would satisfy the sniff and
+			make the measurements harder to read, for no collision risk.
+		-->
+		<exclude-pattern>/tests/cogs/*</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.WP.GlobalVariablesOverride">
+		<!-- Same cause: global scope is an artefact of eval-file, not a design. -->
+		<exclude-pattern>/tests/cogs/*</exclude-pattern>
+	</rule>
+
+	<!--
 		WPCS only knows WordPress core's capabilities, so WooCommerce's own read
 		as typos. This is the capability the whole plugin gates on.
 	-->
