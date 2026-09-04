@@ -239,6 +239,45 @@
 	</rule>
 
 	<!--
+		Two sniffs are excluded for one file each. Both were previously silenced
+		by a `phpcs:disable` spanning almost the whole file - and that is what
+		made the WordPress.org Plugin Check report BOTH files as having no
+		direct-access guard, which they plainly do. Plugin Check runs its own
+		PHPCS without WPCS loaded, so a directive naming a sniff it does not
+		know swallowed its own file-level finding.
+
+		Excluding here instead keeps the justification in one place, keeps the
+		code readable, and leaves no PHPCS directive in the shipped file for
+		another tool to misread. A per-line `phpcs:ignore` is not an option:
+		it covers only the following line, and these are multi-line
+		$wpdb->prepare() calls whose interpolation sits two lines further down.
+	-->
+	<rule ref="WordPress.DB.PreparedSQL.InterpolatedNotPrepared">
+		<!--
+			A TABLE NAME CANNOT BE A PREPARED PLACEHOLDER. $wpdb->prepare()
+			binds values, not identifiers, so "{$table}" is the only way to
+			name a table - and $table is never user input: it is
+			$wpdb->prefix concatenated with a literal in Plugin\Database.
+			Every VALUE in every query in this file is bound. The file's own
+			header comment says the same thing at length.
+		-->
+		<exclude-pattern>/includes/Plugin/Repository.php</exclude-pattern>
+		<exclude-pattern>/includes/Plugin/Database.php</exclude-pattern>
+		<exclude-pattern>/uninstall.php</exclude-pattern>
+	</rule>
+	<rule ref="WordPress.DB.SlowDBQuery">
+		<!--
+			The sniff fires on any array element keyed 'meta_key', which in this
+			file is mostly the RETURN SHAPE of get_cost() - not a query at all.
+			Where it is a query it is get_post_meta()/update_post_meta() for a
+			single known post id, which WordPress serves from the object cache
+			after one primed query per post, not a meta_query across the
+			catalogue. The scanner primes that cache in batches.
+		-->
+		<exclude-pattern>/includes/Woo/CostProvider.php</exclude-pattern>
+	</rule>
+
+	<!--
 		WPCS only knows WordPress core's capabilities, so WooCommerce's own read
 		as typos. This is the capability the whole plugin gates on.
 	-->
