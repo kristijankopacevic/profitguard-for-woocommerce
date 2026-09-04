@@ -1,0 +1,36 @@
+name: Diagnose lint scope
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/diagnose.yml']
+  workflow_dispatch:
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.2', tools: composer }
+      - run: composer install --no-interaction --prefer-dist -q
+      - name: What phpcs actually scans
+        run: |
+          echo "### .php files present (excl vendor)"
+          find . -path ./vendor -prune -o -name '*.php' -print | sort | tee /tmp/present.txt | wc -l
+          echo "### files phpcs reports on (json keys)"
+          vendor/bin/phpcs --report=json . > /tmp/cs.json 2>/dev/null || true
+          python3 -c "
+import json
+d=json.load(open('/tmp/cs.json'))
+fs=sorted(d['files'].keys())
+print(len(fs),'files in phpcs report')
+for f in fs: print('  ',f.split('profitguard-for-woocommerce/')[-1])
+print('TOTALS', d['totals'])
+"
+      - name: Force includes/ and tests/ explicitly
+        run: |
+          echo "### explicit includes/"
+          vendor/bin/phpcs --report=summary includes/ 2>&1 | tail -20 || true
+          echo "### explicit tests/"
+          vendor/bin/phpcs --report=summary tests/ 2>&1 | tail -20 || true
+      - name: The 3 Repository.php warnings
+        run: vendor/bin/phpcs --report=full includes/Plugin/Repository.php 2>&1 | head -40 || true
