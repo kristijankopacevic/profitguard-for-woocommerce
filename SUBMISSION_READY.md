@@ -1,6 +1,11 @@
-# WordPress.org submission — staged, blocked on one owner action
+# WordPress.org submission — staged, account active, ready to submit
 
-**Updated:** 2026-09-04, after v1.0.0 shipped on GitHub.
+**Updated:** 2026-09-22, after v1.0.1 shipped on GitHub.
+
+**The blocker below is resolved:** `https://profiles.wordpress.org/truepotato/`
+answered **200** on 2026-09-22. Submit **1.0.1**, not 1.0.0 — 1.0.0's
+`Plugin URI` named `marginguard-ai`, a private repository that answers 404 to
+the public and would have cost a review round.
 **Supersedes** the 2026-08-31 version of this file, which said the plugin was
 "built and verified" when nothing had ever been verified by CI.
 
@@ -42,9 +47,9 @@ file to upload — do not rebuild it by hand.
 | | |
 |---|---|
 | File | `profitguard-for-woocommerce.zip` |
-| Size | 120,010 bytes |
-| SHA-256 | `237750458773c4164b2e66d87b0565343718c2a42d515fe3ff491bef77b15609` |
-| Source | https://github.com/kristijankopacevic/profitguard-for-woocommerce/releases/tag/v1.0.0 |
+| Size | 120,100 bytes |
+| SHA-256 | `26f28d350ab0f0f5b7a6c7de2d56291ca527c73637c635be91a230b333e2a7a2` |
+| Source | https://github.com/kristijankopacevic/profitguard-for-woocommerce/releases/tag/v1.0.1 |
 | Contents | 29 shipped PHP files, `readme.txt`, `LICENSE`, `assets/css/admin.css`, `languages/README.md` — and nothing else. Asserted in CI. |
 
 The archive's single top-level directory is the plugin slug, and no `tests/`,
@@ -61,7 +66,7 @@ The archive's single top-level directory is the plugin slug, and no `tests/`,
 | Requires at least | 6.4 |
 | Tested up to | 7.1 |
 | Requires PHP | 7.4 |
-| Stable tag | 1.0.0 |
+| Stable tag | 1.0.1 |
 | Licence | GPLv2 or later |
 | Short description | *Turn WooCommerce cost and carrier data into actionable margin and shipping-profit insights. All analysis runs locally in your own store.* (136 chars, limit 150) |
 
@@ -93,7 +98,7 @@ run on every CI build and pass.
 ## Why the review should be uneventful
 
 Every item a reviewer checks is verified on each release by GitHub Actions run
-`33917153186` (green on the `v1.0.0` tag):
+`35772407289` (green on the `v1.0.1` tag; `33917153186` for `v1.0.0`):
 
 - **Plugin Check: zero errors.** Two real errors were found and fixed getting
   here — `missing_direct_file_access_protection` on two files that both carried
