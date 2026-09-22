@@ -4,7 +4,7 @@ Tags: woocommerce, profit, margin, cost of goods, shipping
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -210,6 +210,10 @@ will not invent one.
 
 == Changelog ==
 
+= 1.0.1 =
+* The Plugin URI now points at the public repository. It pointed at a
+  private one, which answered 404 to anyone following it.
+
 = 1.0.0 =
 * First release.
 * Reads WooCommerce's own Cost of Goods Sold field when the feature is enabled,
@@ -242,6 +246,9 @@ will not invent one.
 * Verified on PHP 7.4, 8.1, 8.2, 8.3 and 8.4.
 
 == Upgrade Notice ==
+
+= 1.0.1 =
+Fixes the plugin homepage link. No code or data changes.
 
 = 1.0.0 =
 First release.

@@ -1,9 +1,9 @@
 <?php
 /**
  * Plugin Name:       ProfitGuard for WooCommerce
- * Plugin URI:        https://github.com/kristijankopacevic/marginguard-ai
+ * Plugin URI:        https://github.com/kristijankopacevic/profitguard-for-woocommerce
  * Description:       Turn WooCommerce cost and carrier data into actionable margin and shipping-profit insights. All analysis runs locally in your WordPress installation.
- * Version:           1.0.0
+ * Version:           1.0.1
  * Requires at least: 6.4
  * Requires PHP:      7.4
  * Author:            Kristijan Kopacevic
@@ -24,7 +24,7 @@ declare(strict_types=1);
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'PROFITGUARD_VERSION', '1.0.0' );
+define( 'PROFITGUARD_VERSION', '1.0.1' );
 define( 'PROFITGUARD_FILE', __FILE__ );
 define( 'PROFITGUARD_DIR', plugin_dir_path( __FILE__ ) );
 define( 'PROFITGUARD_URL', plugin_dir_url( __FILE__ ) );
